@@ -1,0 +1,12 @@
+; Settings file template for Notepad32
+underline
+bold
+italic
+font
+font_size
+BG_R
+BG_G
+BG_B
+Text_R
+Text_G
+Text_B

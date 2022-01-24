@@ -1,0 +1,296 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Menu
+//
+
+IDR_MENUBAR MENU
+BEGIN
+    POPUP "File"
+    BEGIN
+        MENUITEM "New",                         ID_FILE_NEW
+        MENUITEM "Open",                        ID_FILE_OPEN
+        MENUITEM "Save",                        ID_FILE_SAVE
+        MENUITEM SEPARATOR
+        MENUITEM "Save As",                     ID_FILE_SAVEAS
+        MENUITEM SEPARATOR
+        MENUITEM "Exit",                        ID_FILE_EXIT
+    END
+    POPUP "Edit"
+    BEGIN
+        MENUITEM "Cut",                         ID_EDIT_CUT
+        MENUITEM SEPARATOR
+        MENUITEM "Copy",                        ID_EDIT_COPY
+        MENUITEM "Paste",                       ID_EDIT_PASTE
+        MENUITEM SEPARATOR
+        MENUITEM "Settings",                    ID_EDIT_SETTINGS
+    END
+    POPUP "Help"
+    BEGIN
+        MENUITEM "Patch Notes",                 ID_HELP_PATCHNOTES
+        MENUITEM "How to Use",                  ID_HELP_HOWTOUSE
+        MENUITEM SEPARATOR
+        MENUITEM "About",                       ID_HELP_ABOUT
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_SETTINGS DIALOGEX 0, 0, 529, 278
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,421,257,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,472,257,50,14
+    GROUPBOX        "Editing Style",IDC_STATIC_EDITING,7,7,155,101
+    LTEXT           "Font:",IDC_STATIC,16,22,18,8
+    CONTROL         "Underline",IDC_SETTINGS_CHECK_UNDERLINE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,46,58,49,10
+    CONTROL         "Italic",IDC_SETTINGS_CHECK_ITALIC,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,46,72,31,10
+    LTEXT           "Size:",IDC_STATIC,16,40,16,8
+    EDITTEXT        IDC_SETTINGS_EDIT_FONTSIZE,46,37,81,14,ES_AUTOHSCROLL | ES_NUMBER
+    PUSHBUTTON      "Apply",ID_SETTINGS_BUTTON_APPLY,370,257,50,14
+    CONTROL         "Bold",IDC_SETTINGS_CHECK_BOLD,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,46,86,29,10
+    EDITTEXT        IDC_SETTINGS_EDIT_FONT,46,21,81,14,ES_AUTOHSCROLL
+    PUSHBUTTON      "...",IDC_SETTINGS_BUTTON_PDFONTS,129,20,23,15
+    LTEXT           "*Changes will take effect after restarting the Notepad32.",IDC_STATIC_CHANGES_TAKES_EFFECT,181,259,186,8
+    GROUPBOX        "Control Styles",IDC_STATIC_STYLES,7,113,155,133
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_R,76,132,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_G,102,132,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_B,128,132,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Background color:",IDC_STATIC,14,135,58,8
+    PUSHBUTTON      "Restore Defaults",IDC_SETTINGS_BUTTON_RESTORE_DEFAULTS,370,241,152,14
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_R_TEXT,76,148,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_G_TEXT,102,148,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    EDITTEXT        IDC_SETTINGS_EDIT_COLOR_B_TEXT,128,148,24,14,ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "Text color:",IDC_STATIC,36,150,36,8
+END
+
+IDD_DEF_FONTS DIALOGEX 0, 0, 179, 51
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Select Font"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,123,11,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,123,27,50,14
+    COMBOBOX        IDC_DEFFONT_COMBO_FONTS,7,18,112,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+END
+
+IDD_ABOUT DIALOGEX 0, 0, 173, 77
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,59,51,56,19
+    LTEXT           "",IDC_STATIC_ABOUT_ABOUTBY,32,11,120,8
+    CTEXT           "",IDC_STATIC_ABOUTINFO,11,24,152,20
+END
+
+IDD_HELP DIALOGEX 0, 0, 309, 176
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,129,155,50,14
+    EDITTEXT        IDC_EDIT_HELPEDIT,7,7,295,145,ES_MULTILINE | ES_AUTOVSCROLL | ES_READONLY | WS_VSCROLL
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_SETTINGS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 522
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 271
+    END
+
+    IDD_DEF_FONTS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 172
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 44
+    END
+
+    IDD_ABOUT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 166
+        VERTGUIDE, 87
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 70
+    END
+
+    IDD_HELP, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 302
+        VERTGUIDE, 154
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 169
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_SETTINGS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_DEF_FONTS AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_ABOUT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+IDD_HELP AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_WICON               ICON                    "Source\\Media\\Icons\\notepad32_32x32_geP_icon.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION 1,0,0,1
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x40004L
+ FILETYPE 0x1L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904b0"
+        BEGIN
+            VALUE "CompanyName", "Ilijatech Softworks"
+            VALUE "FileDescription", "Notepad32 is simple program for editing and IO text."
+            VALUE "FileVersion", "1.0.0.1"
+            VALUE "InternalName", "Notepad32.exe"
+            VALUE "LegalCopyright", "Copyright (C) 2021 Ilijatech"
+            VALUE "OriginalFilename", "Notepad32.exe"
+            VALUE "ProductName", "Notepad32 Editor"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1200
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDS_STRING_PATCH        "- This is very first version of this program, so there are bugs as always.\r\n\r\nRequired fixes:\r\n\t - Settings applying system (if error appears, restart program)\r\n\t - Cut, copy and paste\r\n\t - Spacing between lines during file saving\r\n\t - Recent bug, but also with ""Save As""\r\n\r\nFixed bugs:\r\n\t *Nothing for now.\r\n\r\nIf there are other bugs you've experienced, and they are not specified above, feel free to contact me. Every kind of help is good."
+    IDS_STRING_HOWTOUSE     "There is no special theory behind Notepad32 but some features are invisible like shortcuts for saving, saving as and opening files.\r\n\r\nShortcut keys:\r\n\t\tCtrl + S - Save file\r\n\t\tCtrl + N - New file\r\n\r\nThere are no keys for Opening and Saving As files, but I will add them in next version of Notepad32.\r\nAnother thing is Settings dialog. Go to Edit > Settings inside menu and there is a bunch of controls that are, well, settings. As you can see, there is a lot of space for new settings that will be added in future like window background color, show and hide some controls like menu bar, status bar, etc. and other settings that  are coming in future.\r\n\r\nFor info about Notepad32 and pending bug fixing info aka. Patch Notes are available inside Help > ... menu.\r\n\r\nOther is unneeded to explain because it looks so easy to use this program.\r\nEver used Notepad?"
+    IDS_STRING_ABOUT        "Notepad32 is a software for editing textual files and it's equivalent to Microsoft's notepad."
+    IDS_STRING_ABOUTBY      "Created 2021-2022 by Baltazarus"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
