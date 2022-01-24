@@ -1,4 +1,4 @@
-// Copyright 2021 - 2022 Baltazarus
+// 2021 - 2022 Baltazarus
 
 #include <Windows.h>
 #include <CommCtrl.h>
