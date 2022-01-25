@@ -34,6 +34,8 @@
 #define IDC_STATIC_ABOUTINFO            1019
 #define IDC_EDIT_HELPEDIT               1021
 #define IDC_STATIC_ABOUT_ABOUTBY        1022
+#define IDC_CHECK1                      1025
+#define IDC_CHECK_DARK_THEME            1025
 #define ID_FILE_NEW                     40001
 #define ID_FILE_OPEN                    40002
 #define ID_FILE_SAVE                    40003
@@ -53,7 +55,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        117
 #define _APS_NEXT_COMMAND_VALUE         40013
-#define _APS_NEXT_CONTROL_VALUE         1023
+#define _APS_NEXT_CONTROL_VALUE         1026
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

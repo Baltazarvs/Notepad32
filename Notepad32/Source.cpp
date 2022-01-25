@@ -28,9 +28,10 @@ typedef std::tuple<
 	bool, bool, bool, 
 	std::wstring, int, 
 	int, int, int,
-	int, int, int
+	int, int, int,
+	bool
 > SETTINGS_TUPLE;
-				// und,   bold, it,     font,      sz,   R,   G,   B
+				// und,   bold, it,     font,      sz,   R,   G,   B, dark_theme
 // ======================== FUNCTIONS ==================================
 
 void InitUI(HWND, HINSTANCE);
@@ -61,6 +62,7 @@ static SETTINGS_TUPLE CurrentSettingsTuple;
 static wchar_t Runtime_CurrentPath[MAX_PATH];
 static bool Runtime_CurrentPathOpened = false;
 static bool Runtime_bHelpPatchNotes = false;
+static bool Runtime_bDarkThemeEnabled = false;
 wchar_t* Runtime_DefaultSelectedFontFromDialog = nullptr;
 
 // ========================= HANDLES ===================================
@@ -73,6 +75,7 @@ static HWND w_StatusBar = nullptr;
 LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HBRUSH hbr = CreateSolidBrush(GetSysColor(COLOR_MENU));
+
 	switch (Msg)
 	{
 		case WM_CREATE:
@@ -304,6 +307,8 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	HWND w_TaBkColorTextG = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_G_TEXT);
 	HWND w_TaBkColorTextB = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_B_TEXT);
 
+	HWND w_CheckDarkTheme = GetDlgItem(w_Dlg, IDC_CHECK_DARK_THEME);
+
 	// Used to check if default settings are applied.
 	bool bDefaultSettingsApplied = false;
 
@@ -315,7 +320,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	wchar_t bktR[10], bktG[10], bktB[10];
 	int textAreaBkR = 255, textAreaBkG = 255, textAreaBkB = 255;
 	int textAreaTextBkR = 0, textAreaTextBkG = 0, textAreaTextBkB = 0;
-	
+	bool bDarkTheme;
 	HBRUSH dlgbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 
 	switch (Msg)
@@ -327,6 +332,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			bItalic = std::get<2>(currentSetsTuple);
 			wcscpy(font, std::get<3>(currentSetsTuple).c_str());
 			fontSize = std::get<4>(currentSetsTuple);
+			bDarkTheme = std::get<11>(currentSetsTuple);
 
 			if (bUnderline)
 				SendMessageA(w_CheckUnderline, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
@@ -342,6 +348,12 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 				SendMessageA(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
 			else
 				SendMessageA(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+
+			if (bDarkTheme)
+				SendMessageA(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
+			else
+				SendMessageA(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+
 			SendMessage(w_Font, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(std::get<3>(currentSetsTuple).c_str()));
 
 			std::wostringstream ss;
@@ -392,6 +404,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					bUnderline = IsDlgButtonChecked(w_Dlg, IDC_SETTINGS_CHECK_UNDERLINE) ? true : false;
 					bBold = IsDlgButtonChecked(w_Dlg, IDC_SETTINGS_CHECK_BOLD) ? true : false;
 					bItalic = IsDlgButtonChecked(w_Dlg, IDC_SETTINGS_CHECK_ITALIC) ? true : false;
+					bDarkTheme = IsDlgButtonChecked(w_Dlg, IDC_CHECK_DARK_THEME) ? true : false;
 
 					// Convert font size text string into integer
 					std::wstringstream ss_sz(font_size);
@@ -460,7 +473,8 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 						textAreaBkB,
 						textAreaTextBkR,
 						textAreaTextBkG,
-						textAreaTextBkB
+						textAreaTextBkB,
+						bDarkTheme
 					);
 			
 					// Apply new settings.
@@ -510,6 +524,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 								SetWindowText(w_TaBkColorTextR, L"0");
 								SetWindowText(w_TaBkColorTextG, L"0");
 								SetWindowText(w_TaBkColorTextB, L"0");
+								Button_SetCheck(w_CheckDarkTheme, 0);
 								SendMessage(GetDlgItem(w_Dlg, ID_SETTINGS_BUTTON_APPLY), BM_CLICK, 0u, 0u);
 								break;
 							}
@@ -662,8 +677,10 @@ LRESULT __stdcall DlgProc_Help(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 
 int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, int nCmdShow)
 {
-	WNDCLASSEX wcex;
+	::CurrentSettingsTuple = LoadNotepad32Settings();
+	::Runtime_bDarkThemeEnabled = std::get<11>(::CurrentSettingsTuple);
 
+	WNDCLASSEX wcex;
 	memset(&wcex, 0, sizeof(wcex));
 	wcex.cbSize = sizeof(wcex);
 	wcex.style = 0;
@@ -673,7 +690,10 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 	wcex.hInstance = GetModuleHandle(nullptr);
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
-	wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
+	if (::Runtime_bDarkThemeEnabled)
+		wcex.hbrBackground = CreateSolidBrush(RGB(0x33, 0x33, 0x33));
+	else
+		wcex.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW + 1);
 	wcex.hIcon = LoadIcon(nullptr, MAKEINTRESOURCE(IDI_WICON));
 	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hIconSm = LoadIcon(nullptr, MAKEINTRESOURCE(IDI_WICON));
@@ -740,7 +760,6 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 {
 	DWORD defStyle = (WS_VISIBLE | WS_CHILD);
-	::CurrentSettingsTuple = LoadNotepad32Settings();
 
 	w_TextArea = CreateWindow(
 		WC_EDIT, nullptr,
@@ -949,6 +968,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 	int fontSize = 0;
 	int textAreaBkR = 255, textAreaBkG = 255, textAreaBkB = 255;
 	int textAreaTextBkR = 0, textAreaTextBkG = 0, textAreaTextBkB = 0;
+	bool bDarkTheme;
 
 	std::wfstream file;
 	file.open(L"Source\\Settings\\Main.txt", std::wios::in | std::wios::out);
@@ -1087,17 +1107,21 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					}
 					break;
 				}
+				case 11:
+					bDarkTheme = CheckSettingsValueAndSet(line);
+					break;
 			}
 			++index;
 		}
 	}
 	else
-		return std::make_tuple(false, false, false, L"Arial", 0, 255, 255, 255, 0, 0, 0);
+		return std::make_tuple(false, false, false, L"Arial", 0, 255, 255, 255, 0, 0, 0, false);
 	return std::make_tuple(
 		bUnderline, bBold, bItalic, 
 		font.c_str(), fontSize, 
 		textAreaBkR, textAreaBkG, textAreaBkB,
-		textAreaTextBkR, textAreaTextBkG, textAreaTextBkB
+		textAreaTextBkR, textAreaTextBkG, textAreaTextBkB,
+		bDarkTheme
 	);
 }
 
@@ -1118,7 +1142,8 @@ bool ApplyNotepad32Settings(SETTINGS_TUPLE& settings_tuple)
 		ss_temp << std::get<7>(settings_tuple) << std::endl;
 		ss_temp << std::get<8>(settings_tuple) << std::endl;
 		ss_temp << std::get<9>(settings_tuple) << std::endl;
-		ss_temp << std::get<10>(settings_tuple); // << std::endl; Last line must be excepted if there is no more settings lines!
+		ss_temp << std::get<10>(settings_tuple) << std::endl;
+		ss_temp << CheckSettingsValueAndApply(std::get<11>(settings_tuple)).c_str(); // << std::endl; Last line must be excepted if there is no more settings lines!
 		file << ss_temp.str().c_str();
 		file.close();
 	}
