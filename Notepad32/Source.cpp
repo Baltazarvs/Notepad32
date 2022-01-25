@@ -74,7 +74,11 @@ static HWND w_StatusBar = nullptr;
 
 LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	HBRUSH hbr = CreateSolidBrush(GetSysColor(COLOR_MENU));
+	HBRUSH hbr = nullptr;
+	if(::Runtime_bDarkThemeEnabled)
+		hbr = CreateSolidBrush(RGB(0x55, 0x55, 0x55));
+	else
+		hbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 
 	switch (Msg)
 	{
@@ -89,11 +93,19 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			HDC hdc = reinterpret_cast<HDC>(wParam);
 			if ((HWND)lParam == w_TextArea)
 			{
+				if (::Runtime_bDarkThemeEnabled)
+				{
+					// Set dark theme background color to #555555
+					std::get<5>(::CurrentSettingsTuple) = 85;
+					std::get<6>(::CurrentSettingsTuple) = 85;
+					std::get<7>(::CurrentSettingsTuple) = 85;
+				}
+
 				SetBkColor(
-					hdc, 
+					hdc,
 					RGB(
-						std::get<5>(::CurrentSettingsTuple), 
-						std::get<6>(::CurrentSettingsTuple), 
+						std::get<5>(::CurrentSettingsTuple),
+						std::get<6>(::CurrentSettingsTuple),
 						std::get<7>(::CurrentSettingsTuple)
 					)
 				);
@@ -291,6 +303,11 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
+	// Buttons used for settings box.
+	HWND w_ButtonApply = GetDlgItem(w_Dlg, ID_SETTINGS_BUTTON_APPLY);
+	HWND w_ButtonDefs = GetDlgItem(w_Dlg, IDC_SETTINGS_BUTTON_RESTORE_DEFAULTS);
+
+	// Settings controls.
 	HWND w_CheckUnderline = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_UNDERLINE);
 	HWND w_CheckItalic = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_ITALIC);
 	HWND w_CheckBold = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_BOLD);
@@ -321,7 +338,12 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	int textAreaBkR = 255, textAreaBkG = 255, textAreaBkB = 255;
 	int textAreaTextBkR = 0, textAreaTextBkG = 0, textAreaTextBkB = 0;
 	bool bDarkTheme;
-	HBRUSH dlgbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	HBRUSH dlgbr = nullptr;
+
+	if(::Runtime_bDarkThemeEnabled)
+		dlgbr = CreateSolidBrush(RGB(0x33, 0x33, 0x33));
+	else
+		dlgbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
 
 	switch (Msg)
 	{
@@ -538,20 +560,36 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 				}
 			}
 		}
-		case WM_CTLCOLORBTN:
+		case WM_CTLCOLOREDIT:
+		{
+			if (::Runtime_bDarkThemeEnabled)
+			{
+				HDC hdc = (HDC)wParam;
+				SetTextColor(hdc, RGB(0xFF, 0xFF, 0xFF));
+				SetBkColor(hdc, RGB(0x55, 0x55, 0x55));
+				return (INT_PTR)CreateSolidBrush(RGB(0x55, 0x55, 0x55));
+			}
 			return (INT_PTR)dlgbr;
+		}
+		case WM_CTLCOLORBTN:
+			return (LONG_PTR)dlgbr;
 		case WM_CTLCOLORDLG:
 			return reinterpret_cast<INT_PTR>(dlgbr);
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = reinterpret_cast<HDC>(wParam);
 			LOGBRUSH lbr;
+
 			GetObject(dlgbr, sizeof(HBRUSH), &lbr);
 			SetBkColor(hdc, lbr.lbColor);
+
 			if ((HWND)lParam == GetDlgItem(w_Dlg, IDC_STATIC_CHANGES_TAKES_EFFECT))
 				SetTextColor(hdc, RGB(0xFF, 0x00, 0x00));
 			else
-				return (INT_PTR)dlgbr;
+			{
+				if (::Runtime_bDarkThemeEnabled)
+					SetTextColor(hdc, RGB(0xAA, 0xAA, 0xAA));
+			}
 			return (LONG_PTR)dlgbr;
 		}
 		case WM_CLOSE:
