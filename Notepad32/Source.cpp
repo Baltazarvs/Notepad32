@@ -17,7 +17,7 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #define LP_CLASS_NAME		L"Baltazarus - Notepad32"
-#define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.txt"
+#define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.settings32"
 
 #define IDC_EDIT_TEXTAREA	30001
 
@@ -1031,7 +1031,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 	bool bDarkTheme;
 
 	std::wfstream file;
-	file.open(L"Source\\Settings\\Main.txt", std::wios::in | std::wios::out);
+	file.open(PATH_MAIN_SETTINGS, std::wios::in | std::wios::out);
 	if (file.is_open())
 	{
 		std::wstring line;
