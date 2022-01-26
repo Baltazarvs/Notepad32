@@ -18,6 +18,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #define LP_CLASS_NAME		L"Baltazarus - Notepad32"
 #define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.settings32"
+#define PATH_FONT_SETTINGS  L"Source\\Settings\\Font.settings32"
 
 #define IDC_EDIT_TEXTAREA	30001
 
@@ -615,9 +616,25 @@ LRESULT __stdcall DlgProc_DefaultFonts(HWND w_Dlg, UINT Msg, WPARAM wParam, LPAR
 	{
 		case WM_INITDIALOG:
 		{
-			std::vector<const wchar_t*> fonts { L"Arial", L"Tahoma", L"Times New Roman", L"Impact", L"System" };
-			for(std::size_t i = 0u; i < fonts.size(); ++i)
-				SendMessage(w_FontsComboBox, CB_ADDSTRING, 0u, reinterpret_cast<LPARAM>(fonts[i]));
+			std::vector<std::wstring> fonts;
+
+			std::wifstream file;
+			file.open(PATH_FONT_SETTINGS);
+			if (file.is_open())
+			{
+				std::wstring line;
+				while (std::getline(file, line))
+					fonts.push_back(line);
+				file.close();
+			}
+			else
+				MessageBoxA(GetParent(w_FontsComboBox), "Cannot load font list from file.\nDefault fonts will be loaded.", "Error", MB_OK | MB_ICONEXCLAMATION);
+
+			if(fonts.size() < 1)
+				fonts = std::vector<std::wstring> { L"Arial", L"Tahoma", L"Times New Roman", L"Impact", L"System" };
+
+			for (std::size_t i = 0u; i < fonts.size(); ++i)
+				SendMessage(w_FontsComboBox, CB_ADDSTRING, 0u, reinterpret_cast<LPARAM>(fonts[i].c_str()));
 			SendMessage(w_FontsComboBox, CB_SETCURSEL, 0u, 0u);
 			break;
 		}
