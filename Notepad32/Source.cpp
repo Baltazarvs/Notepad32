@@ -17,6 +17,7 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 #define LP_CLASS_NAME		L"Ilijatech - Notepad32"
+#define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.txt"
 
 #define IDC_EDIT_TEXTAREA	30001
 
@@ -85,6 +86,10 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			InitUI(w_Handle, GetModuleHandle(nullptr));
+
+			if (wcslen(::Runtime_CurrentPath) > 1)
+				WriteReadFileToTextArea(::Runtime_CurrentPath);
+
 			UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
 			break;
 		}
@@ -443,17 +448,17 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 
 					if ((textAreaBkR > 255) || (textAreaBkR < 0))
 					{
-						MessageBoxA(0, "[6] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[6] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkR = 255;
 					}
 					if ((textAreaBkG > 255) || (textAreaBkG < 0))
 					{
-						MessageBoxA(0, "[7] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[7] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkG = 255;
 					}
 					if ((textAreaBkB > 255) || (textAreaBkB < 0))
 					{
-						MessageBoxA(0, "[8] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[8] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkB = 255;
 					}
 
@@ -469,17 +474,17 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 
 					if ((textAreaTextBkR > 255) || (textAreaTextBkR < 0))
 					{
-						MessageBoxA(0, "[9] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[9] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkR = 255;
 					}
 					if ((textAreaTextBkG > 255) || (textAreaTextBkG < 0))
 					{
-						MessageBoxA(0, "[10] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[10] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkG = 0;
 					}
 					if ((textAreaTextBkB > 255) || (textAreaTextBkB < 0))
 					{
-						MessageBoxA(0, "[11] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxA(w_Dlg, "[11] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkB = 0;
 					}
 
@@ -715,6 +720,23 @@ LRESULT __stdcall DlgProc_Help(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 
 int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, int nCmdShow)
 {
+	// Parse arguments...
+	std::vector<std::wstring> ArgsVec;
+	std::wstring open_with_path = L"NO_FILE";
+
+	int argc = 0;
+	wchar_t** argv = CommandLineToArgvW(GetCommandLineW(), &argc);
+
+	for (int i = 0; i < argc; ++i)
+		ArgsVec.push_back(argv[i]);
+	HeapFree(GetProcessHeap(), NULL, argv);
+
+	if (argc > 1)
+	{
+		wcscpy(::Runtime_CurrentPath, ArgsVec[1].c_str());
+		::Runtime_CurrentPathOpened = true;
+	}
+
 	::CurrentSettingsTuple = LoadNotepad32Settings();
 	::Runtime_bDarkThemeEnabled = std::get<11>(::CurrentSettingsTuple);
 
@@ -964,7 +986,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 bool SaveTextToFile(const wchar_t* path)
 {
 	// Get length of file text.
-	int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+	int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
 
 	// Set path to status bar's first part.
 	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(path));
@@ -1167,7 +1189,7 @@ bool ApplyNotepad32Settings(SETTINGS_TUPLE& settings_tuple)
 {
 	std::wostringstream ss_temp;
 	std::wofstream file;
-	file.open(L"Source\\Settings\\Main.txt");
+	file.open(PATH_MAIN_SETTINGS);
 	if (file.is_open())
 	{
 		ss_temp << CheckSettingsValueAndApply(std::get<0>(settings_tuple)).c_str() << std::endl;
