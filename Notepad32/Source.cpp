@@ -52,7 +52,7 @@ std::wstring GetTextFromClipboard();
 std::wstring GetSelectedText(std::wstring);
 bool CheckColorSetting(std::wstring line);
 std::wstring SubstringSelectedText(const wchar_t*, unsigned long, unsigned long);
-void RemoveSelectedText(HWND);
+void RemoveSelectedText(HWND, bool, std::wstring = std::wstring());
 
 LRESULT __stdcall DlgProc_Settings(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_DefaultFonts(HWND, UINT, WPARAM, LPARAM);
@@ -186,7 +186,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 				case ID_EDIT_CUT:
 				{
 					CopyTextToClipboard();
-					::RemoveSelectedText(w_TextArea);
+					::RemoveSelectedText(w_TextArea, false);
 					break;
 				}
 				case ID_EDIT_COPY:
@@ -197,27 +197,8 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 				case ID_EDIT_PASTE:
 				{
 					std::wstring clipboard_text = GetTextFromClipboard();
-
-					unsigned long begin_sel;
-					unsigned long end_sel;
-					SendMessage(w_TextArea, EM_GETSEL, (WPARAM)&begin_sel, (LPARAM)&end_sel);
-					if (begin_sel == end_sel)
-					{
-						std::size_t text_area_len = static_cast<std::size_t>(Edit_GetTextLength(w_TextArea)) + 1;
-						wchar_t* buff = new wchar_t[text_area_len];
-						GetWindowTextW(w_TextArea, buff, text_area_len * sizeof(wchar_t));
-
-						std::wstring temp_buff(buff);
-						delete[] buff;
-
-						std::wstring primary_part_before = temp_buff.substr(0ull, begin_sel);
-						std::wstring primary_part_after = temp_buff.substr(primary_part_before.length() + (end_sel - begin_sel), temp_buff.length());
-						std::wstring append_text = primary_part_before + clipboard_text;
-						std::wstring new_textarea_text = append_text + primary_part_after;
-						SetWindowTextW(w_TextArea, new_textarea_text.c_str());
-						Edit_SetSel(w_TextArea, append_text.length(), append_text.length());
-						UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
-					}
+					RemoveSelectedText(w_TextArea, true, clipboard_text);
+					UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
 					break;
 				}
 				case ID_HELP_ABOUT:
@@ -1308,27 +1289,36 @@ std::wstring SubstringSelectedText(const wchar_t* pEditText, unsigned long begin
 	return selected_text;
 }
 
-void RemoveSelectedText(HWND w_Handle)
+void RemoveSelectedText(HWND w_Handle, bool bPaste, std::wstring clipboard_text)
 {
 	unsigned long begin_sel;
 	unsigned long end_sel;
-	SendMessage(w_TextArea, EM_GETSEL, reinterpret_cast<WPARAM>(&begin_sel), reinterpret_cast<LPARAM>(&end_sel));
+	SendMessage(w_Handle, EM_GETSEL, reinterpret_cast<WPARAM>(&begin_sel), reinterpret_cast<LPARAM>(&end_sel));
 
 	std::size_t sel_len = (std::size_t)(end_sel - begin_sel);
 
-	int len = GetWindowTextLengthW(w_TextArea);
+	int len = GetWindowTextLengthW(w_Handle);
 	if (len < 1) return;
 	len += 1;
 
 	wchar_t* buff = new wchar_t[len];
-	GetWindowTextW(w_TextArea, buff, len * sizeof(wchar_t));
+	GetWindowTextW(w_Handle, buff, len * sizeof(wchar_t));
 
 	std::wstring temp_buff(buff);
 	std::wstring primary_part_before = temp_buff.substr(0ull, begin_sel);
 	std::wstring primary_part_after = temp_buff.substr(primary_part_before.length() + sel_len, temp_buff.length());
-	temp_buff = primary_part_before + primary_part_after;
-	SetWindowTextW(w_TextArea, temp_buff.c_str());
-	SendMessage(w_TextArea, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
+	
+	if (bPaste)
+		temp_buff = primary_part_before + clipboard_text + primary_part_after;
+	else
+		temp_buff = primary_part_before + primary_part_after;
+
+	SetWindowTextW(w_Handle, temp_buff.c_str());
+	
+	if(bPaste)
+		SendMessage(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size() + clipboard_text.size(), (LPARAM)primary_part_before.size() + clipboard_text.size());
+	else
+		SendMessage(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
 	delete[] buff;
 	return;
 }
