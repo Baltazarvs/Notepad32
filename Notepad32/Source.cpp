@@ -238,6 +238,8 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_SIZE:
 		{
+			static int sbWidths[3];
+
 			RECT wRect = { };
 			GetClientRect(w_Handle, &wRect);
 
@@ -254,6 +256,11 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			textAreaHeight = wTextAreaRect.bottom - statusHeight;
 			MoveWindow(w_TextArea, 0, 0, wRect.right, wRect.bottom - statusHeight, TRUE);
 			MoveWindow(w_StatusBar, 0, 0, wRect.right, 0, TRUE);
+
+			sbWidths[0] = wRect.right / 3;
+			sbWidths[1] = wRect.right / 2;
+			sbWidths[2] = - 1;
+			SendMessage(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
 			break;
 		}
 		case WM_CLOSE:
@@ -801,7 +808,7 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 
 	w_TextArea = CreateWindowW(
 		WC_EDIT, nullptr,
-		defStyle | WS_BORDER | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE,
+		defStyle | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE,
 		0, 0, 300, 300,
 		w_Handle, reinterpret_cast<HMENU>(IDC_EDIT_TEXTAREA), w_Inst, nullptr
 	);
