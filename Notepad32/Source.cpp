@@ -545,7 +545,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 		case WM_CTLCOLORSTATIC:
 		{
 			HDC hdc = reinterpret_cast<HDC>(wParam);
-			LOGBRUSH lbr;
+			LOGBRUSH lbr {};
 
 			GetObject(dlgbr, sizeof(HBRUSH), &lbr);
 			SetBkColor(hdc, lbr.lbColor);
@@ -963,37 +963,32 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 
 bool SaveTextToFile(const wchar_t* path)
 {
-	// Get length of file text.
-	int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
+	int text_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
+	wchar_t* buffer = nullptr;
 
-	// Set path to status bar's first part.
 	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(path));
 	wcscpy(::Runtime_CurrentPath, path);
-
-	std::wfstream file(path, std::wios::in | std::wios::out | std::wios::trunc);
-	wchar_t* buffer = nullptr;
+	
+	std::wofstream file(path);
 	
 	if (file.is_open())
 	{
-		// Allocate buffer for text that will be saved.
-		buffer = new wchar_t[text_len + 1];
-		// If allocation fails.
+		buffer = new wchar_t[text_len];
 		if (buffer == nullptr)
 		{
 			MessageBoxA(GetParent(w_TextArea), "Cannot allocate memory buffer for file!", "Fatal Error!", MB_OK | MB_ICONERROR);
 			return false;
 		}
-		// Get text from text area.
-		GetWindowText(w_TextArea, buffer, text_len);
-		// Write buffer content to the file.
-		file << buffer;
+
+		SendMessage(w_TextArea, WM_GETTEXT, static_cast<WPARAM>(text_len), reinterpret_cast<LPARAM>(buffer));
+		//std::wstring tempp(buffer);
+		//tempp.erase(std::remove(tempp.begin(), tempp.end(), '\r'), tempp.end());
+		//file.write(tempp.c_str(), text_len - 2);
+		file.write(buffer, text_len);
 		file.close();
 	}
-	//else if (path == nullptr)
-	//	return true;
 	else
 		return false;
-	// Delete useless allocated memory to avoid memory leak.
 	delete[] buffer;
 	return true;
 }
