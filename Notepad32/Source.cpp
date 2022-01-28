@@ -52,6 +52,7 @@ std::wstring GetTextFromClipboard();
 std::wstring GetSelectedText(std::wstring);
 bool CheckColorSetting(std::wstring line);
 std::wstring SubstringSelectedText(const wchar_t*, unsigned long, unsigned long);
+void RemoveSelectedText(HWND);
 
 LRESULT __stdcall DlgProc_Settings(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_DefaultFonts(HWND, UINT, WPARAM, LPARAM);
@@ -185,28 +186,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 				case ID_EDIT_CUT:
 				{
 					CopyTextToClipboard();
-
-					unsigned long begin_sel;
-					unsigned long end_sel;
-					SendMessage(w_TextArea, EM_GETSEL, (WPARAM)&begin_sel, (LPARAM)&end_sel);
-
-					std::size_t text_len = static_cast<std::size_t>(Edit_GetTextLength(w_TextArea));
-					if (text_len < 1ull)
-						return 1;
-
-					text_len += 1ull;
-
-					wchar_t* buff = new wchar_t[text_len * sizeof(wchar_t)];
-					GetWindowTextW(w_TextArea, buff, (int)text_len);
-
-					std::wstring temp_buff(buff);
-					std::wstring primary_part_before = temp_buff.substr(0ull, begin_sel);
-					std::wstring primary_part_after = temp_buff.substr(primary_part_before.length() + (end_sel - begin_sel), temp_buff.length());
-					temp_buff = primary_part_before + primary_part_after;
-
-					SetWindowTextW(w_TextArea, temp_buff.c_str());
-					SendMessage(w_TextArea, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
-					delete[] buff;
+					::RemoveSelectedText(w_TextArea);
 					break;
 				}
 				case ID_EDIT_COPY:
@@ -838,7 +818,7 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 {
 	DWORD defStyle = (WS_VISIBLE | WS_CHILD);
 
-	w_TextArea = CreateWindow(
+	w_TextArea = CreateWindowW(
 		WC_EDIT, nullptr,
 		defStyle | WS_BORDER | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE,
 		0, 0, 300, 300,
@@ -1326,6 +1306,31 @@ std::wstring SubstringSelectedText(const wchar_t* pEditText, unsigned long begin
 	std::wstring selected_text = temp_buff.substr(begin, end);
 	selected_text = selected_text.erase(end - begin, selected_text.size());
 	return selected_text;
+}
+
+void RemoveSelectedText(HWND w_Handle)
+{
+	unsigned long begin_sel;
+	unsigned long end_sel;
+	SendMessage(w_TextArea, EM_GETSEL, reinterpret_cast<WPARAM>(&begin_sel), reinterpret_cast<LPARAM>(&end_sel));
+
+	std::size_t sel_len = (std::size_t)(end_sel - begin_sel);
+
+	int len = GetWindowTextLengthW(w_TextArea);
+	if (len < 1) return;
+	len += 1;
+
+	wchar_t* buff = new wchar_t[len];
+	GetWindowTextW(w_TextArea, buff, len * sizeof(wchar_t));
+
+	std::wstring temp_buff(buff);
+	std::wstring primary_part_before = temp_buff.substr(0ull, begin_sel);
+	std::wstring primary_part_after = temp_buff.substr(primary_part_before.length() + sel_len, temp_buff.length());
+	temp_buff = primary_part_before + primary_part_after;
+	SetWindowTextW(w_TextArea, temp_buff.c_str());
+	SendMessage(w_TextArea, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
+	delete[] buff;
+	return;
 }
 
 bool CheckSettingsValueAndSet(std::wstring value)
