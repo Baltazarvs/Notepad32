@@ -224,6 +224,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 						w_Handle,
 						reinterpret_cast<DLGPROC>(&DlgProc_About)
 					);
+
 					break;
 				}
 				case ID_HELP_PATCHNOTES:
@@ -280,12 +281,13 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 		}
 		case WM_CLOSE:
 		{
-			int len = GetWindowTextLengthW(w_TextArea);
-			wchar_t* buffer = new wchar_t[len];
-			GetWindowTextW(w_TextArea, buffer, len);
-			bool bExit = CheckFileChanges(buffer);
-			delete[] buffer;
-			if (!bExit) break;
+			// In Progress...
+			//int len = GetWindowTextLengthW(w_TextArea);
+			//wchar_t* buffer = new wchar_t[len];
+			//GetWindowTextW(w_TextArea, buffer, len);
+			//bool bExit = CheckFileChanges(buffer);
+			//delete[] buffer;
+			//if (!bExit) break;
 			DestroyWindow(w_Handle);
 			break;
 		}
@@ -745,7 +747,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 		{
 			switch(LOWORD(wParam))
 			{
-				case ID_BUTTON_FIND:
+				case IDC_BUTTON_FIND:
 				{
 					static std::vector<std::size_t> IndexVec;
 					bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
@@ -779,16 +781,41 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					}
 
 					// Selected text occurrence.
-					if (IndexVec.size() > 1)
+					if (IndexVec.size() > 0)
 					{
 						if (sequence_index == IndexVec.size())
 							sequence_index = 0u;
-						SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t));
+						SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t) - 1);
 						sequence_index += 1;
 					}
 					delete[] buffer;
 					break;
 				}
+				case IDC_BUTTON_FIND_COUNT:
+				{
+					std::wstring ta_text;
+					int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+					if (text_len < 1)
+						return 1;
+					text_len += 1;
+					buffer = new wchar_t[text_len * sizeof(wchar_t)];
+					SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+					ta_text = buffer;
+					delete[] buffer;
+
+					text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
+					buffer = new wchar_t[text_len * sizeof(wchar_t)];
+					SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+					
+					std::wstringstream wss;
+					wss << "Found " << CountAllCases(ta_text, buffer, text_len) << " occurrences.";
+					delete[] buffer;
+					MessageBoxW(w_Dlg, wss.str().c_str(), L"Found Occurrences", MB_OK | MB_ICONINFORMATION);
+					break;
+				}
+				case IDCANCEL:
+					EndDialog(w_Dlg, IDCANCEL);
+					break;
 			}
 			break;
 		}
@@ -1447,6 +1474,7 @@ bool CheckFileChanges(const wchar_t* ta_text)
 
 int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length)
 {
+	// Always missing one occurrence. Needs fix!
 	int count = 0;
 	std::size_t pos = ta_text.find(wfind);
 	while (pos != std::wstring::npos)
