@@ -743,46 +743,53 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 			break;
 		case WM_COMMAND:
 		{
-			static std::vector<std::size_t> IndexVec;
-			bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
-			bool bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
-			bool bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
-			std::wstring temp_buffer_ta;
-
-			// Get text from main text area.
-			int ta_text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
-			if (ta_text_len < 1) return 1;
-			ta_text_len += 1;
-			wchar_t* tbuffer = new wchar_t[ta_text_len * sizeof(wchar_t)];
-			SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)ta_text_len, reinterpret_cast<LPARAM>(tbuffer));
-			temp_buffer_ta = tbuffer;
-			delete[] tbuffer;
-
-			// Get text from edit box.
-			int text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
-			if (text_len < 1)
-				return 1;
-			text_len += 1;
-			buffer = new wchar_t[text_len * sizeof(wchar_t)];
-			SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
-
-			// Find all occurrences.
-			std::size_t pos = temp_buffer_ta.find(buffer);
-			while (pos != std::wstring::npos)
+			switch(LOWORD(wParam))
 			{
-				IndexVec.push_back(pos);
-				pos = temp_buffer_ta.find(buffer, pos + text_len * sizeof(wchar_t));
-			}
+				case ID_BUTTON_FIND:
+				{
+					static std::vector<std::size_t> IndexVec;
+					bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
+					bool bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
+					bool bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
+					std::wstring temp_buffer_ta;
 
-			// Selected text occurrence.
-			if (IndexVec.size() > 1)
-			{
-				if (sequence_index == IndexVec.size())
-					sequence_index = 0u;
-				SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t));
-				sequence_index += 1;
+					// Get text from main text area.
+					int ta_text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+					if (ta_text_len < 1) return 1;
+					ta_text_len += 1;
+					wchar_t* tbuffer = new wchar_t[ta_text_len * sizeof(wchar_t)];
+					SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)ta_text_len, reinterpret_cast<LPARAM>(tbuffer));
+					temp_buffer_ta = tbuffer;
+					delete[] tbuffer;
+
+					// Get text from edit box.
+					int text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
+					if (text_len < 1)
+						return 1;
+					text_len += 1;
+					buffer = new wchar_t[text_len * sizeof(wchar_t)];
+					SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+
+					// Find all occurrences.
+					std::size_t pos = temp_buffer_ta.find(buffer);
+					while (pos != std::wstring::npos)
+					{
+						IndexVec.push_back(pos);
+						pos = temp_buffer_ta.find(buffer, pos + text_len * sizeof(wchar_t));
+					}
+
+					// Selected text occurrence.
+					if (IndexVec.size() > 1)
+					{
+						if (sequence_index == IndexVec.size())
+							sequence_index = 0u;
+						SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t));
+						sequence_index += 1;
+					}
+					delete[] buffer;
+					break;
+				}
 			}
-			delete[] buffer;
 			break;
 		}
 		case WM_CLOSE:
