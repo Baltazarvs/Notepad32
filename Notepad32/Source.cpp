@@ -53,11 +53,15 @@ std::wstring GetSelectedText(std::wstring);
 bool CheckColorSetting(std::wstring line);
 std::wstring SubstringSelectedText(const wchar_t*, unsigned long, unsigned long);
 void RemoveSelectedText(HWND, bool, std::wstring = std::wstring());
+bool CheckFileChanges(const wchar_t* ta_text);
+int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length);
+void SelectText(int from, int to);
 
 LRESULT __stdcall DlgProc_Settings(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_DefaultFonts(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_About(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_Help(HWND, UINT, WPARAM, LPARAM);
+LRESULT __stdcall DlgProc_Find(HWND, UINT, WPARAM, LPARAM);
 
 // ======================== VARIABLES ==================================
 
@@ -66,6 +70,7 @@ static wchar_t Runtime_CurrentPath[MAX_PATH];
 static bool Runtime_CurrentPathOpened = false;
 static bool Runtime_bHelpPatchNotes = false;
 static bool Runtime_bDarkThemeEnabled = false;
+static std::size_t Runtime_FindIndex = 0ull;
 wchar_t* Runtime_DefaultSelectedFontFromDialog = nullptr;
 
 // ========================= HANDLES ===================================
@@ -201,6 +206,16 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 					UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
 					break;
 				}
+				case ID_EDIT_FIND:
+				{
+					DialogBoxW(
+						GetModuleHandleW(nullptr),
+						MAKEINTRESOURCEW(IDD_FIND),
+						w_Handle,
+						reinterpret_cast<DLGPROC>(&DlgProc_Find)
+					);
+					break;
+				}
 				case ID_HELP_ABOUT:
 				{
 					DialogBox(
@@ -264,8 +279,16 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 		case WM_CLOSE:
+		{
+			int len = GetWindowTextLengthW(w_TextArea);
+			wchar_t* buffer = new wchar_t[len];
+			GetWindowTextW(w_TextArea, buffer, len);
+			bool bExit = CheckFileChanges(buffer);
+			delete[] buffer;
+			if (!bExit) break;
 			DestroyWindow(w_Handle);
 			break;
+		}
 		case WM_DESTROY:
 			PostQuitMessage(0);
 			break;
@@ -699,6 +722,72 @@ LRESULT __stdcall DlgProc_Help(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 	case WM_CLOSE:
 		EndDialog(w_Dlg, 0);
 		break;
+	}
+	return 0;
+}
+
+LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	HWND w_ButtonFind = GetDlgItem(w_Dlg, IDC_BUTTON_FIND);
+	HWND w_ButtonCount = GetDlgItem(w_Dlg, IDC_BUTTON_FIND_COUNT);
+	HWND w_EditFind = GetDlgItem(w_Dlg, IDC_EDIT_FIND);
+	HWND w_CheckMatchCase = GetDlgItem(w_Dlg, IDC_CHECK_MATCH_CASE);
+	HWND w_CheckWrapAround = GetDlgItem(w_Dlg, IDC_CHECK_WRAP_AROUND);
+	HWND w_CheckStoreToMem = GetDlgItem(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
+	static unsigned int sequence_index = 0u;
+	wchar_t* buffer = nullptr;
+
+	switch (Msg)
+	{
+		case WM_INITDIALOG:
+			break;
+		case WM_COMMAND:
+		{
+			static std::vector<std::size_t> IndexVec;
+			bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
+			bool bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
+			bool bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
+			std::wstring temp_buffer_ta;
+
+			// Get text from main text area.
+			int ta_text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+			if (ta_text_len < 1) return 1;
+			ta_text_len += 1;
+			wchar_t* tbuffer = new wchar_t[ta_text_len * sizeof(wchar_t)];
+			SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)ta_text_len, reinterpret_cast<LPARAM>(tbuffer));
+			temp_buffer_ta = tbuffer;
+			delete[] tbuffer;
+
+			// Get text from edit box.
+			int text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
+			if (text_len < 1)
+				return 1;
+			text_len += 1;
+			buffer = new wchar_t[text_len * sizeof(wchar_t)];
+			SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+
+			// Find all occurrences.
+			std::size_t pos = temp_buffer_ta.find(buffer);
+			while (pos != std::wstring::npos)
+			{
+				IndexVec.push_back(pos);
+				pos = temp_buffer_ta.find(buffer, pos + text_len * sizeof(wchar_t));
+			}
+
+			// Selected text occurrence.
+			if (IndexVec.size() > 1)
+			{
+				if (sequence_index == IndexVec.size())
+					sequence_index = 0u;
+				SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t));
+				sequence_index += 1;
+			}
+			delete[] buffer;
+			break;
+		}
+		case WM_CLOSE:
+			EndDialog(w_Dlg, 0);
+			break;
 	}
 	return 0;
 }
@@ -1322,6 +1411,48 @@ void RemoveSelectedText(HWND w_Handle, bool bPaste, std::wstring clipboard_text)
 	else
 		SendMessage(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
 	delete[] buff;
+	return;
+}
+
+bool CheckFileChanges(const wchar_t* ta_text)
+{
+	std::wstring temp_opened(ta_text);
+	std::wostringstream woss;
+	
+	std::wifstream file;
+	file.open(::Runtime_CurrentPath);
+	if (file.is_open())
+	{
+		woss << file.rdbuf();
+		file.close();
+		if (woss.str() != temp_opened)
+		{
+			int confirm = MessageBoxA(GetParent(w_TextArea), "File is not saved.\nSave?", "Unsaved File", MB_YESNO | MB_ICONQUESTION);
+			if (confirm == IDYES)
+			{
+				SaveTextToFile(::Runtime_CurrentPath);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length)
+{
+	int count = 0;
+	std::size_t pos = ta_text.find(wfind);
+	while (pos != std::wstring::npos)
+	{
+		pos = ta_text.find(wfind, pos + find_length * sizeof(wchar_t));
+		++count;
+	}
+	return count;
+}
+
+void SelectText(int from, int to)
+{
+	SendMessageW(w_TextArea, EM_SETSEL, static_cast<WPARAM>(from), static_cast<LPARAM>(to));
 	return;
 }
 

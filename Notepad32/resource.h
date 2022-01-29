@@ -13,6 +13,7 @@
 #define IDS_STRING_PATCH                115
 #define IDS_STRING_HOWTOUSE             116
 #define IDS_STRING_ABOUT                117
+#define IDD_FIND                        117
 #define IDS_STRING_ABOUTBY              118
 #define IDC_SETTINGS_CHECK_UNDERLINE    1002
 #define IDC_SETTINGS_CHECK_ITALIC       1003
@@ -36,6 +37,14 @@
 #define IDC_STATIC_ABOUT_ABOUTBY        1022
 #define IDC_CHECK1                      1025
 #define IDC_CHECK_DARK_THEME            1025
+#define IDC_CHECK_MATCH_CASE            1025
+#define IDC_EDIT_FIND                   1026
+#define IDC_BUTTON_FIND_COUNT           1027
+#define IDC_CHECK_WRAP_AROUND           1030
+#define IDC_CHECK_STORE_INDEX_TO_MEMORY 1031
+#define IDC_EDIT_FOUND_INDEX            1033
+#define IDC_EDIT_FOUND_LINE             1034
+#define IDC_BUTTON_FIND                 1035
 #define ID_FILE_NEW                     40001
 #define ID_FILE_OPEN                    40002
 #define ID_FILE_SAVE                    40003
@@ -48,14 +57,15 @@
 #define ID_HELP_ABOUT                   40010
 #define ID_HELP_PATCHNOTES              40011
 #define ID_HELP_HOWTOUSE                40012
+#define ID_EDIT_FIND                    40013
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        117
-#define _APS_NEXT_COMMAND_VALUE         40013
-#define _APS_NEXT_CONTROL_VALUE         1026
+#define _APS_NEXT_RESOURCE_VALUE        119
+#define _APS_NEXT_COMMAND_VALUE         40014
+#define _APS_NEXT_CONTROL_VALUE         1036
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
