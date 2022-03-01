@@ -56,6 +56,9 @@ void RemoveSelectedText(HWND, bool, std::wstring = std::wstring());
 bool CheckFileChanges(const wchar_t* ta_text);
 int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length);
 void SelectText(int from, int to);
+std::size_t FindCaseSensitive(std::wstring, const wchar_t*, std::size_t);
+void FindAllCaseSensitiveOccurrences(std::wstring, const wchar_t*, std::vector<std::wstring>&);
+COLORREF GetColorFromDialog(HWND w_Handle, HINSTANCE w_Inst);
 
 LRESULT __stdcall DlgProc_Settings(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_DefaultFonts(HWND, UINT, WPARAM, LPARAM);
@@ -72,6 +75,8 @@ static bool Runtime_bHelpPatchNotes = false;
 static bool Runtime_bDarkThemeEnabled = false;
 static std::size_t Runtime_FindIndex = 0ull;
 wchar_t* Runtime_DefaultSelectedFontFromDialog = nullptr;
+static COLORREF Runtime_customColors[16];
+static COLORREF Runtime_rgbCurrent = RGB(0xFF, 0xFF, 0xFF);
 
 // ========================= HANDLES ===================================
 
@@ -211,7 +216,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 					DialogBoxW(
 						GetModuleHandleW(nullptr),
 						MAKEINTRESOURCEW(IDD_FIND),
-						w_Handle,
+						nullptr,
 						reinterpret_cast<DLGPROC>(&DlgProc_Find)
 					);
 					break;
@@ -557,6 +562,28 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					}
 					break;
 				}
+				case IDC_BUTTON_PICK_COLOR_BG:
+				{
+					COLORREF bgcol = ::GetColorFromDialog(w_Dlg, GetModuleHandle(nullptr));
+					BYTE R = GetRValue(bgcol), G = GetGValue(bgcol), B = GetBValue(bgcol);
+
+					std::wostringstream oss;
+					oss << R; SetWindowText(w_TaBkColorR, oss.str().c_str()); oss.str(std::wstring());
+					oss << G; SetWindowText(w_TaBkColorG, oss.str().c_str()); oss.str(std::wstring());
+					oss << B; SetWindowText(w_TaBkColorB, oss.str().c_str()); oss.str(std::wstring());
+					break;
+				}
+				case IDC_BUTTON_PICK_COLOR_TEXT:
+				{
+					COLORREF txcolor = ::GetColorFromDialog(w_Dlg, GetModuleHandle(nullptr));
+					BYTE R = GetRValue(txcolor), G = GetGValue(txcolor), B = GetBValue(txcolor);
+
+					std::wostringstream oss;
+					oss << R; SetWindowText(w_TaBkColorTextR, oss.str().c_str()); oss.str(std::wstring());
+					oss << G; SetWindowText(w_TaBkColorTextG, oss.str().c_str()); oss.str(std::wstring());
+					oss << B; SetWindowText(w_TaBkColorTextB, oss.str().c_str()); oss.str(std::wstring());
+					break;
+				}
 			}
 		}
 		case WM_CTLCOLOREDIT:
@@ -749,7 +776,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 			{
 				case IDC_BUTTON_FIND:
 				{
-					static std::vector<std::size_t> IndexVec;
+					std::vector<std::size_t> IndexVec;
 					bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
 					bool bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
 					bool bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
@@ -785,10 +812,11 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					{
 						if (sequence_index == IndexVec.size())
 							sequence_index = 0u;
-						SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t) - 1);
+						SelectText(IndexVec[sequence_index], text_len * sizeof(wchar_t));
 						sequence_index += 1;
 					}
 					delete[] buffer;
+					SetFocus(w_TextArea);
 					break;
 				}
 				case IDC_BUTTON_FIND_COUNT:
@@ -1474,7 +1502,7 @@ bool CheckFileChanges(const wchar_t* ta_text)
 
 int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length)
 {
-	// Always missing one occurrence. Needs fix!
+	// TODO: Always missing one occurrence. Needs fix!
 	int count = 0;
 	std::size_t pos = ta_text.find(wfind);
 	while (pos != std::wstring::npos)
@@ -1489,6 +1517,46 @@ void SelectText(int from, int to)
 {
 	SendMessageW(w_TextArea, EM_SETSEL, static_cast<WPARAM>(from), static_cast<LPARAM>(to));
 	return;
+}
+
+std::size_t FindCaseSensitive(std::wstring tstr, const wchar_t* wfind, std::size_t pos = 0ull)
+{
+	std::wstring wsfind(wfind);
+	std::transform(tstr.begin(), tstr.end(), tstr.begin(), ::tolower);
+	std::transform(wsfind.begin(), wsfind.end(), wsfind.begin(), ::tolower);
+	return tstr.find(wfind, pos);
+}
+
+void FindAllCaseSensitiveOccurrences(std::wstring tstr, const wchar_t* wfind, std::vector<std::size_t>& pos_vec)
+{
+	std::wstring wsfind(wfind);
+	std::size_t pos = tstr.find(wsfind);
+	while (pos != std::wstring::npos)
+	{
+		pos_vec.push_back(pos);
+		pos = FindCaseSensitive(tstr, wfind, pos + wsfind.size());
+	}
+	return;
+}
+
+COLORREF GetColorFromDialog(HWND w_Handle, HINSTANCE w_Inst)
+{
+	CHOOSECOLOR lcc;
+
+	memset(&lcc, 0, sizeof(CHOOSECOLOR));
+	lcc.lStructSize = sizeof(CHOOSECOLOR);
+	lcc.Flags = CC_FULLOPEN | CC_RGBINIT;
+	lcc.hwndOwner = w_Handle;
+	lcc.hInstance = nullptr;
+	lcc.rgbResult = ::Runtime_rgbCurrent;
+	lcc.lpCustColors = ::Runtime_customColors;
+
+	if(ChooseColor(&lcc))
+	{
+		::Runtime_rgbCurrent = lcc.rgbResult;
+		return lcc.rgbResult;
+	}
+	return ::Runtime_rgbCurrent;
 }
 
 bool CheckSettingsValueAndSet(std::wstring value)

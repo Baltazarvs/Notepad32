@@ -45,6 +45,9 @@
 #define IDC_EDIT_FOUND_INDEX            1033
 #define IDC_EDIT_FOUND_LINE             1034
 #define IDC_BUTTON_FIND                 1035
+#define IDC_BUTTON_PICK_COLOR_BG        1036
+#define IDC_BUTTON2                     1037
+#define IDC_BUTTON_PICK_COLOR_TEXT      1037
 #define ID_FILE_NEW                     40001
 #define ID_FILE_OPEN                    40002
 #define ID_FILE_SAVE                    40003
@@ -65,7 +68,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        119
 #define _APS_NEXT_COMMAND_VALUE         40014
-#define _APS_NEXT_CONTROL_VALUE         1036
+#define _APS_NEXT_CONTROL_VALUE         1037
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
