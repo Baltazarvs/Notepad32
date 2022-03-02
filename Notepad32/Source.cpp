@@ -72,7 +72,7 @@ LRESULT __stdcall DlgProc_About(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_Help(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_Find(HWND, UINT, WPARAM, LPARAM);
 
-LRESULT __stdcall WndProc_StatusBarInfo(HWND, UINT, WPARAM, LPARAM);
+LRESULT __stdcall WndProc_StatusBarInfo(HWND, UINT, WPARAM, LPARAM, UINT_PTR, DWORD_PTR);
 
 // ======================== VARIABLES ==================================
 
@@ -863,7 +863,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 	return 0;
 }
 
-LRESULT __stdcall WndProc_StatusBarInfo(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT __stdcall WndProc_StatusBarInfo(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam, UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
 {
 	switch (Msg)
 	{
@@ -874,7 +874,7 @@ LRESULT __stdcall WndProc_StatusBarInfo(HWND w_Handle, UINT Msg, WPARAM wParam, 
 			if (ScreenToClient(w_Handle, &cpos))
 			{
 				int arr_pos[3] = { };
-				wchar_t sbpart_buff[255] = L"STATUS_BAR_INFO";
+				wchar_t sbpart_buff[255] = L"";
 
 				SendMessage(w_StatusBar, SB_GETPARTS, 3u, reinterpret_cast<LPARAM>(arr_pos));
 				if (cpos.x <= arr_pos[0])
