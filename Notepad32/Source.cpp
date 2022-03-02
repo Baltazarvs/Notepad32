@@ -1,5 +1,8 @@
 // 2021 - 2022 Baltazarus
 
+#define _WIN32_WINNT 0x501
+#define _WIN32_IE 0x0300
+
 #include <Windows.h>
 #include <CommCtrl.h>
 #include <windowsx.h>
@@ -11,10 +14,13 @@
 #include <algorithm>
 #include "resource.h"
 
-#pragma warning (disable : 4996)
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
-name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
-processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#ifdef _MSC_VER
+	#pragma warning (disable : 4996)
+	#pragma comment(lib, "Comctl32.lib")
+	#pragma comment(linker,"\"/manifestdependency:type='win32' \
+	name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
+	processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
+#endif
 
 #define LP_CLASS_NAME		L"Baltazarus - Notepad32"
 #define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.settings32"
@@ -66,6 +72,8 @@ LRESULT __stdcall DlgProc_About(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_Help(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_Find(HWND, UINT, WPARAM, LPARAM);
 
+LRESULT __stdcall WndProc_StatusBarInfo(HWND, UINT, WPARAM, LPARAM);
+
 // ======================== VARIABLES ==================================
 
 static SETTINGS_TUPLE CurrentSettingsTuple;
@@ -98,6 +106,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			InitUI(w_Handle, GetModuleHandle(nullptr));
+			SetWindowSubclass(w_StatusBar, (SUBCLASSPROC)&WndProc_StatusBarInfo, 0u, 0u);
 
 			if (wcslen(::Runtime_CurrentPath) > 1)
 				WriteReadFileToTextArea(::Runtime_CurrentPath);
@@ -850,6 +859,37 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 		case WM_CLOSE:
 			EndDialog(w_Dlg, 0);
 			break;
+	}
+	return 0;
+}
+
+LRESULT __stdcall WndProc_StatusBarInfo(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
+{
+	switch (Msg)
+	{
+		case WM_LBUTTONDOWN:
+		{
+			POINT cpos;
+			GetCursorPos(&cpos);
+			if (ScreenToClient(w_Handle, &cpos))
+			{
+				int arr_pos[3] = { };
+				wchar_t sbpart_buff[255] = L"STATUS_BAR_INFO";
+
+				SendMessage(w_StatusBar, SB_GETPARTS, 3u, reinterpret_cast<LPARAM>(arr_pos));
+				if (cpos.x <= arr_pos[0])
+					SendMessageW(w_StatusBar, SB_GETTEXTW, 0u, reinterpret_cast<LPARAM>(sbpart_buff));
+				else if (cpos.x <= arr_pos[1])
+					SendMessageW(w_StatusBar, SB_GETTEXTW, 1u, reinterpret_cast<LPARAM>(sbpart_buff));
+				else if (cpos.x > arr_pos[1])
+					SendMessageW(w_StatusBar, SB_GETTEXTW, 2u, reinterpret_cast<LPARAM>(sbpart_buff));
+
+				MessageBoxW(GetParent(w_Handle), sbpart_buff, L"Status Bar Info", MB_OK);
+			}
+			break;
+		}
+		default:
+			return DefSubclassProc(w_Handle, Msg, wParam, lParam);
 	}
 	return 0;
 }
