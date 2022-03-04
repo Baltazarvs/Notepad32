@@ -829,7 +829,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					while (pos != std::wstring::npos)
 					{
 						IndexVec.push_back(pos);
-						pos = temp_buffer_ta.find(buffer, pos + text_len * sizeof(wchar_t) - 1);
+						pos = temp_buffer_ta.find(buffer, pos + 1);
 					}
 
 					// Selected text occurrence.
@@ -1572,8 +1572,8 @@ int CountAllCases(std::wstring ta_text, const wchar_t* wfind, int find_length)
 	std::size_t pos = ta_text.find(wfind);
 	while (pos != std::wstring::npos)
 	{
-		pos = ta_text.find(wfind, pos + find_length * sizeof(wchar_t));
-		++count;
+		pos = ta_text.find(wfind, pos + 1);
+		count += 1;
 	}
 	return count;
 }
