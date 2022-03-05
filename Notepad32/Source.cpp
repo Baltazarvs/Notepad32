@@ -67,6 +67,9 @@ void FindAllCaseSensitiveOccurrences(std::wstring, const wchar_t*, std::vector<s
 COLORREF GetColorFromDialog(HWND w_Handle, HINSTANCE w_Inst);
 template <typename T> std::wstring ConvertToString(T var);
 
+// ======================= PROCEDURES ==================================
+LRESULT __stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
+
 LRESULT __stdcall DlgProc_Settings(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_DefaultFonts(HWND, UINT, WPARAM, LPARAM);
 LRESULT __stdcall DlgProc_About(HWND, UINT, WPARAM, LPARAM);
@@ -112,7 +115,6 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 			if (wcslen(::Runtime_CurrentPath) > 1)
 				WriteReadFileToTextArea(::Runtime_CurrentPath);
-
 			UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
 			break;
 		}
@@ -555,7 +557,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 							case IDYES:
 							{
 								SetWindowText(w_Font, L"Arial");
-								SetWindowText(w_FontSize, L"0");
+								SetWindowText(w_FontSize, L"18");
 								Button_SetCheck(w_CheckUnderline, 0);
 								Button_SetCheck(w_CheckItalic, 0);
 								Button_SetCheck(w_CheckBold, 0);
@@ -783,20 +785,30 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 
 	static unsigned int sequence_index = 0u;
 	wchar_t* buffer = nullptr;
-
+	static bool bMatchCase = false;
+	static bool bWrapAround = false;
+	static bool bStoreToMem = false;
 
 	switch (Msg)
 	{
+		case WM_INITDIALOG:
+		{
+			Button_SetCheck(GetDlgItem(w_Dlg, IDC_CHECK_MATCH_CASE), bMatchCase);
+			Button_SetCheck(GetDlgItem(w_Dlg, IDC_CHECK_WRAP_AROUND), bWrapAround);
+			Button_SetCheck(GetDlgItem(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY), bStoreToMem);
+			break;
+		}
 		case WM_COMMAND:
 		{
 			switch(LOWORD(wParam))
 			{
 				case IDC_BUTTON_FIND:
 				{
+					bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
+					bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
+					bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
+
 					std::vector<std::size_t> IndexVec;
-					bool bMatchCase = IsDlgButtonChecked(w_Dlg, IDC_CHECK_MATCH_CASE);
-					bool bWrapAround = IsDlgButtonChecked(w_Dlg, IDC_CHECK_WRAP_AROUND);
-					bool bStoreToMem = IsDlgButtonChecked(w_Dlg, IDC_CHECK_STORE_INDEX_TO_MEMORY);
 					std::wstring temp_buffer_ta;
 
 					// Get text from main text area.
@@ -811,7 +823,12 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					// Get text from edit box.
 					int text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
 					if (text_len < 1)
+					{
+						MessageBox(w_Dlg, L"Specify at least one character.", L"Find", MB_OK);
+						sequence_index = 0;
 						return 1;
+					}
+
 					text_len += 1;
 					buffer = new wchar_t[text_len * sizeof(wchar_t)];
 					SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
@@ -822,6 +839,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					if (pos == std::wstring::npos)
 					{
 						MessageBox(w_Dlg, L"There are no occurences with specified text.", L"No Occurrences.", MB_OK | MB_ICONINFORMATION);
+						sequence_index = 0;
 						delete[] buffer;
 						break;
 					}
@@ -835,17 +853,20 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					// Selected text occurrence.
 					if (IndexVec.size() > 0)
 					{
-						std::vector<std::size_t> csvec;
+						// Count of lines in a MainTextArea, starting from 1.
+						int lines_count = 1; 
+						lines_count += CountAllCases(temp_buffer_ta, L"\r\n", 1);
+
 						if (sequence_index == IndexVec.size())
 							sequence_index = 0u;
-						SelectText(IndexVec[sequence_index], (IndexVec[sequence_index] - 1) + text_len);
+						SelectText(IndexVec[sequence_index], IndexVec[sequence_index] - 1 + text_len);
+						SetWindowText(w_EditFoundIndex, ConvertToString<int>(IndexVec[sequence_index]).c_str());
+						++sequence_index;
 						
 						// =========================== IN PROGRESS... =====================================
-						SetWindowText(w_EditFoundIndex, ConvertToString<int>(IndexVec[sequence_index]).c_str());
-						FindAllCaseSensitiveOccurrences(temp_buffer_ta, L"\n", csvec);
-						SetWindowText(w_EditFoundLine, ConvertToString<std::size_t>(csvec.size()).c_str());
+						//int current_line = SendMessage(w_TextArea, EM_LINEFROMCHAR, (WPARAM)IndexVec[sequence_index], 0u);
+						//SetWindowText(w_EditFoundLine, ConvertToString<int>(current_line).c_str());
 						// ================================================================================
-						++sequence_index;
 					}
 					delete[] buffer;
 					SetFocus(w_TextArea);
@@ -883,6 +904,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 		case WM_CLOSE:
 			EndDialog(w_Dlg, 0);
 			::Runtime_bFindDialogOpened = false;
+			sequence_index = 0;
 			break;
 	}
 	return 0;
@@ -968,7 +990,7 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 	HWND w_Handle = CreateWindowEx(
 		WS_EX_CLIENTEDGE,
 		LP_CLASS_NAME,
-		L"Notepad32 v1.0",
+		L"Notepad32",
 		WS_OVERLAPPEDWINDOW,
 		100, 100, 650, 500,
 		nullptr, nullptr, nullptr, nullptr
@@ -1038,8 +1060,7 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 	);
 
 	SendMessage(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
-	SendMessage(w_StatusBar, SB_SETTEXT, 0u, reinterpret_cast<LPARAM>(L"Length: 0"));
-	SendMessage(w_StatusBar, SB_SETTEXT, 1u, reinterpret_cast<LPARAM>(L"Lines: 0"));
+	UpdateStatusForLengthLine(0, 0);
 	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
 
 	const std::size_t control_num = 1;
