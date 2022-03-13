@@ -15,6 +15,8 @@
 #define IDS_STRING_ABOUT                117
 #define IDD_FIND                        117
 #define IDS_STRING_ABOUTBY              118
+#define IDC_STATIC_HISTORY_SETTINGS_GP  1000
+#define IDC_LIST_RECENT_FILES_HISTORY   1001
 #define IDC_SETTINGS_CHECK_UNDERLINE    1002
 #define IDC_SETTINGS_CHECK_ITALIC       1003
 #define IDC_SETTINGS_EDIT_FONTSIZE      1004
@@ -23,6 +25,7 @@
 #define IDC_SETTINGS_BUTTON_PDFONTS     1007
 #define IDC_STATIC_CHANGES_TAKES_EFFECT 1008
 #define IDC_DEFFONT_COMBO_FONTS         1009
+#define IDC_BUTTON_CLEAR_RECENT_HISTORY 1009
 #define IDC_SETTINGS_EDIT_COLOR_R       1010
 #define IDC_SETTINGS_EDIT_COLOR_G       1011
 #define IDC_SETTINGS_EDIT_COLOR_B       1012
@@ -33,6 +36,8 @@
 #define IDC_STATIC_EDITING              1017
 #define IDC_STATIC_STYLES               1018
 #define IDC_STATIC_ABOUTINFO            1019
+#define IDC_BUTTON3                     1019
+#define IDC_BUTTON_DELETE_RECENT_HISTORY_SELECTION 1019
 #define IDC_EDIT_HELPEDIT               1021
 #define IDC_STATIC_ABOUT_ABOUTBY        1022
 #define IDC_CHECK1                      1025
@@ -61,16 +66,15 @@
 #define ID_HELP_PATCHNOTES              40011
 #define ID_HELP_HOWTOUSE                40012
 #define ID_EDIT_FIND                    40013
+#define ID_FILE_RECENT                  40014
 
 // Next default values for new objects
 // 
-#ifdef _MSC_VER
-	#ifdef APSTUDIO_INVOKED
-	#ifndef APSTUDIO_READONLY_SYMBOLS
-	#define _APS_NEXT_RESOURCE_VALUE        119
-	#define _APS_NEXT_COMMAND_VALUE         40014
-	#define _APS_NEXT_CONTROL_VALUE         1037
-	#define _APS_NEXT_SYMED_VALUE           101
-	#endif
-	#endif
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NEXT_RESOURCE_VALUE        101
+#define _APS_NEXT_COMMAND_VALUE         40005
+#define _APS_NEXT_CONTROL_VALUE         1020
+#define _APS_NEXT_SYMED_VALUE           101
+#endif
 #endif

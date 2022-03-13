@@ -25,6 +25,7 @@
 #define LP_CLASS_NAME		L"Baltazarus - Notepad32"
 #define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.settings32"
 #define PATH_FONT_SETTINGS  L"Source\\Settings\\Font.settings32"
+#define PATH_RECENT_FILES	L"Source\\Settings\\Recent.settings32"
 
 #define IDC_EDIT_TEXTAREA	30001
 
@@ -66,6 +67,11 @@ std::size_t FindCaseSensitive(std::wstring, const wchar_t*, std::size_t);
 void FindAllCaseSensitiveOccurrences(std::wstring, const wchar_t*, std::vector<std::size_t>&);
 COLORREF GetColorFromDialog(HWND w_Handle, HINSTANCE w_Inst);
 template <typename T> std::wstring ConvertToString(T var);
+void PushRecentFilename(const wchar_t* filename);
+void PushRecentMenuItems(HWND w_Handle);
+void ClearRecentFilenames();
+std::vector<std::wstring> PullRecentFilenames();
+bool CheckRecentFilenameExistence(const wchar_t* filename);
 
 // ======================= PROCEDURES ==================================
 LRESULT __stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -116,6 +122,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			if (wcslen(::Runtime_CurrentPath) > 1)
 				WriteReadFileToTextArea(::Runtime_CurrentPath);
 			UpdateStatusForLengthLine(Edit_GetTextLength(w_TextArea), Edit_GetLineCount(w_TextArea));
+			PushRecentMenuItems(w_Handle);
 			break;
 		}
 		case WM_CTLCOLOREDIT:
@@ -180,6 +187,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 					::Runtime_CurrentPathOpened = true;
 					// Copy opened path to current buffer used for opened file path.
 					wcscpy(::Runtime_CurrentPath, path.c_str());
+					PushRecentFilename(path.c_str());
 					break;
 				}
 				case ID_FILE_SAVE:
@@ -328,24 +336,27 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	HWND w_ButtonApply = GetDlgItem(w_Dlg, ID_SETTINGS_BUTTON_APPLY);
 	HWND w_ButtonDefs = GetDlgItem(w_Dlg, IDC_SETTINGS_BUTTON_RESTORE_DEFAULTS);
 
-	// Settings controls.
-	HWND w_CheckUnderline = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_UNDERLINE);
-	HWND w_CheckItalic = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_ITALIC);
-	HWND w_CheckBold = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_BOLD);
-
-	HWND w_Font = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_FONT);
+	// ========================= Editing Styles ==================================
+	HWND w_Font = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_FONT); // APPLY AFFECTED
 	HWND w_DefaultFonts = GetDlgItem(w_Dlg, IDC_SETTINGS_BUTTON_PDFONTS);
-	HWND w_FontSize = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_FONTSIZE);
+	HWND w_FontSize = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_FONTSIZE); // APPLY AFFECTED
+	HWND w_CheckUnderline = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_UNDERLINE); // APPLY AFFECTED
+	HWND w_CheckItalic = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_ITALIC); // APPLY AFFECTED
+	HWND w_CheckBold = GetDlgItem(w_Dlg, IDC_SETTINGS_CHECK_BOLD); // APPLY AFFECTED
 
-	HWND w_TaBkColorR = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_R);
-	HWND w_TaBkColorG = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_G);
-	HWND w_TaBkColorB = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_B);
+	// ========================= Control Styles ==================================
+	HWND w_TaBkColorR = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_R); // APPLY AFFECTED
+	HWND w_TaBkColorG = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_G); // APPLY AFFECTED
+	HWND w_TaBkColorB = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_B); // APPLY AFFECTED
+	HWND w_TaBkColorTextR = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_R_TEXT); // APPLY AFFECTED
+	HWND w_TaBkColorTextG = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_G_TEXT); // APPLY AFFECTED
+	HWND w_TaBkColorTextB = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_B_TEXT); // APPLY AFFECTED
+	HWND w_CheckDarkTheme = GetDlgItem(w_Dlg, IDC_CHECK_DARK_THEME); // APPLY AFFECTED
 
-	HWND w_TaBkColorTextR = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_R_TEXT);
-	HWND w_TaBkColorTextG = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_G_TEXT);
-	HWND w_TaBkColorTextB = GetDlgItem(w_Dlg, IDC_SETTINGS_EDIT_COLOR_B_TEXT);
-
-	HWND w_CheckDarkTheme = GetDlgItem(w_Dlg, IDC_CHECK_DARK_THEME);
+	// ========================= Recent Files =====================================
+	HWND w_ListBoxRecentFiles = GetDlgItem(w_Dlg, IDC_LIST_RECENT_FILES_HISTORY);
+	HWND w_ButtonClearRecent = GetDlgItem(w_Dlg, IDC_BUTTON_CLEAR_RECENT_HISTORY);
+	HWND w_ButtonDeleteSelection = GetDlgItem(w_Dlg, IDC_BUTTON_DELETE_RECENT_HISTORY_SELECTION);
 
 	// Used to check if default settings are applied.
 	bool bDefaultSettingsApplied = false;
@@ -370,6 +381,10 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	{
 		case WM_INITDIALOG:
 		{
+			std::vector<std::wstring> recent_vec = PullRecentFilenames();
+			for (auto& a : recent_vec)
+				SendMessage(w_ListBoxRecentFiles, LB_ADDSTRING, 0u, (LPARAM)a.c_str());
+			
 			bUnderline = std::get<0>(currentSetsTuple);
 			bBold = std::get<1>(currentSetsTuple);
 			bItalic = std::get<2>(currentSetsTuple);
@@ -426,6 +441,8 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			ss.str(L"");
 			ss << std::get<10>(currentSetsTuple);
 			SendMessage(w_TaBkColorTextB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+
+			EnableWindow(w_ButtonDeleteSelection, FALSE);
 			break;
 		}
 		case WM_COMMAND:
@@ -599,6 +616,39 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					oss << R; SetWindowText(w_TaBkColorTextR, oss.str().c_str()); oss.str(std::wstring());
 					oss << G; SetWindowText(w_TaBkColorTextG, oss.str().c_str()); oss.str(std::wstring());
 					oss << B; SetWindowText(w_TaBkColorTextB, oss.str().c_str()); oss.str(std::wstring());
+					break;
+				}
+				case IDC_BUTTON_CLEAR_RECENT_HISTORY:
+				{
+					SendMessage(w_ListBoxRecentFiles, LB_RESETCONTENT, 0, 0);
+					::ClearRecentFilenames();
+					break;
+				}
+				case IDC_BUTTON_DELETE_RECENT_HISTORY_SELECTION:
+				{
+					std::wofstream file;
+					file.open(PATH_RECENT_FILES);
+					if (file.is_open())
+					{
+						int item_count = SendMessage(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
+						int selected_count = 0;
+
+						for (int i = 0; i < item_count; ++i)
+						{
+							int sel_index = SendMessageW(w_ListBoxRecentFiles, LB_GETSEL, static_cast<WPARAM>(i), 0u);
+							selected_count += (sel_index > 0) ? 1 : 0;
+
+							if (sel_index > 0)
+							{
+								wchar_t sel_path_buffer[MAX_PATH];
+								//SendMessage(w_ListBoxRecentFiles, LB_GETTEXT,);
+
+								SendMessageW(w_ListBoxRecentFiles, LB_DELETESTRING, static_cast<WPARAM>(i), 0u);
+							}
+						}
+						if ((selected_count > 0) != true)
+							EnableWindow(w_ButtonClearRecent, FALSE);
+					}
 					break;
 				}
 			}
@@ -1125,10 +1175,28 @@ bool WriteReadFileToTextArea(const wchar_t* Path)
 
 	if (Path != nullptr)
 	{
-		std::wfstream file;
-		file.open(Path, std::ios::in | std::ios::out);
+		std::wifstream file;
+		file.open(Path);
 		if (file.is_open())
 		{
+			//std::wstring textBuffer;
+			//file.seekg(0, std::wios::end);
+			//std::size_t file_size = file.tellg();
+			//file.seekg(0, std::wios::beg);
+			//
+			//wchar_t* buffer = new wchar_t[file_size];
+			//file.read(buffer, file_size);
+			//buffer[file_size - 1] = '\0';
+			//
+			//textBuffer = buffer;
+			//
+			//std::vector<std::size_t> index_vec;
+			//FindAllCaseSensitiveOccurrences(textBuffer, L"\n", index_vec);
+			//if (index_vec.size() > 0)
+			//	for (auto& a : index_vec)
+			//		textBuffer[a] = L'\r\n';
+			//delete[] buffer;
+
 			std::wstring textBuffer;
 			std::wstring line;
 			while (std::getline(file, line))
@@ -1137,6 +1205,7 @@ bool WriteReadFileToTextArea(const wchar_t* Path)
 				textBuffer += line.c_str();
 				textBuffer += L"\r\n";
 			}
+
 			SendMessage(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(textBuffer.c_str()));
 			int text_length = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
 			int text_lines = SendMessage(w_TextArea, EM_GETLINECOUNT, 0u, 0u);
@@ -1172,6 +1241,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 				}
 				// Set boolean that tells us that we have one existing file that's been edited right now.
 				::Runtime_CurrentPathOpened = true;
+				PushRecentFilename(path.c_str());
 			}
 			else
 			{
@@ -1201,6 +1271,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 				return -1;
 			}
 			::Runtime_CurrentPathOpened = true;
+			PushRecentFilename(path.c_str());
 		}
 	}
 }
@@ -1225,10 +1296,17 @@ bool SaveTextToFile(const wchar_t* path)
 		}
 
 		SendMessage(w_TextArea, WM_GETTEXT, static_cast<WPARAM>(text_len), reinterpret_cast<LPARAM>(buffer));
-		//std::wstring tempp(buffer);
-		//tempp.erase(std::remove(tempp.begin(), tempp.end(), '\r'), tempp.end());
-		//file.write(tempp.c_str(), text_len - 2);
-		file.write(buffer, text_len);
+
+		// ============= ADDED to prevent line separating after save. ==============
+		std::wstring tempp(buffer);
+		std::vector<std::size_t> poses_vec;
+		FindAllCaseSensitiveOccurrences(tempp, L"\r", poses_vec);
+		if(poses_vec.size() > 0)
+			for (auto& a : poses_vec)
+				tempp.erase(a, 1);
+		// =========================================================================
+		//file.write(buffer, text_len);
+		file.write(tempp.c_str(), text_len - poses_vec.size() - 1);
 		file.close();
 	}
 	else
@@ -1643,6 +1721,72 @@ COLORREF GetColorFromDialog(HWND w_Handle, HINSTANCE w_Inst)
 		return lcc.rgbResult;
 	}
 	return ::Runtime_rgbCurrent;
+}
+
+void PushRecentFilename(const wchar_t* filename)
+{
+	if (CheckRecentFilenameExistence(filename))
+		return;
+
+	std::wofstream file;
+	file.open(PATH_RECENT_FILES, std::wios::out | std::wios::app);
+	if (file.is_open())
+	{
+		file << filename << std::endl;
+		file.close();
+	}
+	else
+		MessageBoxA(GetParent(w_TextArea), "Cannot push recent file.", "File Open Error", MB_OK | MB_ICONERROR);
+	return;
+}
+
+void PushRecentMenuItems(HWND w_Handle)
+{
+	HMENU w_MenuBar = GetMenu(w_Handle);
+	HMENU w_File = GetSubMenu(w_MenuBar, 0);
+	HMENU w_Recent = GetSubMenu(w_File, 6);
+	//AppendMenuA(w_Recent, MF_POPUP | MF_STRING, (UINT_PTR)40015, "dasdasd"); // TODO: TEST
+	return;
+}
+
+void ClearRecentFilenames()
+{
+	std::wofstream file;
+	file.open(PATH_RECENT_FILES, std::wios::trunc);
+	file.close();
+	return;
+}
+
+std::vector<std::wstring> PullRecentFilenames()
+{
+	std::vector<std::wstring> pull_vec;
+	std::wifstream file;
+	file.open(PATH_RECENT_FILES);
+	if (file.is_open())
+	{
+		std::wstring line;
+		while (std::getline(file, line))
+			pull_vec.push_back(line);
+		file.close();
+	}
+	return pull_vec;
+}
+
+bool CheckRecentFilenameExistence(const wchar_t* filename)
+{
+	std::wifstream file;
+	file.open(filename);
+	if (file.is_open())
+	{
+		std::wostringstream wss;
+		wss << file.rdbuf();
+		file.close();
+
+		std::size_t pos = wss.str().find(filename);
+		if (pos != std::wstring::npos)
+			return true;
+	}
+	return false;
 }
 
 bool CheckSettingsValueAndSet(std::wstring value)
