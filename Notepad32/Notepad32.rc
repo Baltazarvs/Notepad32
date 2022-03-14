@@ -297,11 +297,11 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Ilijatech Softworks"
+            VALUE "CompanyName", "Baltazarus"
             VALUE "FileDescription", "Notepad32 is simple program for editing and IO text."
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Notepad32.exe"
-            VALUE "LegalCopyright", "Copyright (C) 2021 Ilijatech"
+            VALUE "LegalCopyright", "Copyright (C) 2021 - 2022 Baltazarus"
             VALUE "OriginalFilename", "Notepad32.exe"
             VALUE "ProductName", "Notepad32 Editor"
             VALUE "ProductVersion", "1.0.0.1"
