@@ -1,0 +1,13 @@
+There is no special theory behind Notepad32 but some features are invisible like shortcuts for saving, saving as and opening files.
+
+Shortcut keys:
+		Ctrl + S - Save file
+		Ctrl + N - New file
+
+There are no keys for Opening and Saving As files, but I will add them in next version of Notepad32.
+Another thing is Settings dialog. Go to Edit > Settings inside menu and there is a bunch of controls that are, well, settings.
+As you can see, there is a lot of space for new settings that will be added in future like window background color, 
+show and hide some controls like menu bar, status bar, etc. and other settings that  are coming in future.
+For info about Notepad32 and pending bug fixing info aka. Patch Notes are available inside Help > ... menu.
+Other is unneeded to explain because it looks so easy to use this program.
+Ever used Notepad?

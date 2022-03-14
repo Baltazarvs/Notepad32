@@ -26,6 +26,8 @@
 #define PATH_MAIN_SETTINGS  L"Source\\Settings\\Main.settings32"
 #define PATH_FONT_SETTINGS  L"Source\\Settings\\Font.settings32"
 #define PATH_RECENT_FILES	L"Source\\Settings\\Recent.settings32"
+#define PATH_PATCH_NOTES	L"Source\\Info\\Patch_Notes.txt"
+#define PATH_HOW_TO_USE		L"Source\\Info\\How_To_Use.txt"
 
 #define IDC_EDIT_TEXTAREA	30001
 
@@ -72,6 +74,8 @@ void PushRecentMenuItems(HWND w_Handle);
 void ClearRecentFilenames();
 std::vector<std::wstring> PullRecentFilenames();
 bool CheckRecentFilenameExistence(const wchar_t* filename);
+
+std::wstring LoadInfoFromFile(const wchar_t* path);
 
 // ======================= PROCEDURES ==================================
 LRESULT __stdcall WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -382,8 +386,14 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 		case WM_INITDIALOG:
 		{
 			std::vector<std::wstring> recent_vec = PullRecentFilenames();
-			for (auto& a : recent_vec)
-				SendMessage(w_ListBoxRecentFiles, LB_ADDSTRING, 0u, (LPARAM)a.c_str());
+			if (recent_vec.size() < 1)
+			{
+				EnableWindow(w_ButtonClearRecent, FALSE);
+				EnableWindow(w_ButtonDeleteSelection, FALSE);
+			}
+			else
+				for (auto& a : recent_vec)
+					SendMessage(w_ListBoxRecentFiles, LB_ADDSTRING, 0u, (LPARAM)a.c_str());
 			
 			bUnderline = std::get<0>(currentSetsTuple);
 			bBold = std::get<1>(currentSetsTuple);
@@ -442,7 +452,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			ss << std::get<10>(currentSetsTuple);
 			SendMessage(w_TaBkColorTextB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
-			EnableWindow(w_ButtonDeleteSelection, FALSE);
+			//EnableWindow(w_ButtonDeleteSelection, FALSE);
 			break;
 		}
 		case WM_COMMAND:
@@ -622,6 +632,8 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 				{
 					SendMessage(w_ListBoxRecentFiles, LB_RESETCONTENT, 0, 0);
 					::ClearRecentFilenames();
+					EnableWindow(w_ButtonClearRecent, FALSE);
+					EnableWindow(w_ButtonDeleteSelection, FALSE);
 					break;
 				}
 				case IDC_BUTTON_DELETE_RECENT_HISTORY_SELECTION:
@@ -633,6 +645,13 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 						int item_count = SendMessage(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
 						int selected_count = 0;
 
+						// If there is just one item left, disable this and clear buttons because it will be useless...
+						if (item_count == 1)
+						{
+							EnableWindow(w_ButtonClearRecent, FALSE);
+							EnableWindow(w_ButtonDeleteSelection, FALSE);
+						}
+
 						for (int i = 0; i < item_count; ++i)
 						{
 							int sel_index = SendMessageW(w_ListBoxRecentFiles, LB_GETSEL, static_cast<WPARAM>(i), 0u);
@@ -640,14 +659,27 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 
 							if (sel_index > 0)
 							{
-								wchar_t sel_path_buffer[MAX_PATH];
-								//SendMessage(w_ListBoxRecentFiles, LB_GETTEXT,);
-
 								SendMessageW(w_ListBoxRecentFiles, LB_DELETESTRING, static_cast<WPARAM>(i), 0u);
+								std::wofstream file;
+								file.open(PATH_RECENT_FILES, std::wios::trunc);
+								if (file.is_open())
+								{
+									int count = SendMessage(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
+									static wchar_t buffer[MAX_PATH];
+									for (int i = 0; i < count; ++i)
+									{
+										ListBox_GetText(w_ListBoxRecentFiles, i, buffer);
+										file << buffer << std::endl;
+									}
+									file.close();
+								}
 							}
 						}
-						if ((selected_count > 0) != true)
-							EnableWindow(w_ButtonClearRecent, FALSE);
+						if (selected_count < 1)
+						{
+							MessageBox(w_Dlg, L"Item not selected.", L"Select Item", MB_OK);
+							break;
+						}
 					}
 					break;
 				}
@@ -790,21 +822,22 @@ LRESULT __stdcall DlgProc_About(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPar
 LRESULT __stdcall DlgProc_Help(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	HWND w_HelpBox = GetDlgItem(w_Dlg, IDC_EDIT_HELPEDIT);
+	wchar_t char_buff[950];
 
 	switch (Msg)
 	{
 	case WM_INITDIALOG:
 	{
-		static wchar_t char_buff[950] = { };
-
 		if (::Runtime_bHelpPatchNotes)
 		{
+			//std::wstring char_buff = LoadInfoFromFile(PATH_PATCH_NOTES);
 			LoadString(GetModuleHandle(nullptr), IDS_STRING_PATCH, char_buff, 950);
 			SetWindowTextW(w_HelpBox, char_buff);
 			SetWindowTextW(w_Dlg, L"Patch Notes");
 		}
 		else
 		{
+			//std::wstring char_buff = LoadInfoFromFile(PATH_HOW_TO_USE);
 			LoadString(GetModuleHandle(nullptr), IDS_STRING_HOWTOUSE, char_buff, 950);
 			SetWindowTextW(w_HelpBox, char_buff);
 			SetWindowTextW(w_Dlg, L"How to Use");
@@ -1787,6 +1820,25 @@ bool CheckRecentFilenameExistence(const wchar_t* filename)
 			return true;
 	}
 	return false;
+}
+
+std::wstring LoadInfoFromFile(const wchar_t* path)
+{
+	static std::wstring res_buffer_content;
+	std::wifstream file;
+	file.open(path);
+	if (file.is_open())
+	{
+		std::wostringstream woss;
+		std::wstring line;
+		while (std::getline(file, line))
+			woss << line;
+		file.close();
+		res_buffer_content = woss.str();
+	}
+	else
+		MessageBox(nullptr, L"Cannot load info from file.", L"Cannot load info", MB_OK | MB_ICONERROR);
+	return res_buffer_content;
 }
 
 bool CheckSettingsValueAndSet(std::wstring value)

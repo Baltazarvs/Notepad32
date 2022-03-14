@@ -1,0 +1,15 @@
+- This is very first version of this program, so there are bugs as always.
+Required fixes:
+- Cut, copy and paste
+	 Spacing between lines during file saving
+	-Recent bug, but also with "Save As"
+
+Fxe bugs:
+	- Setings applying system
+	- Savng file now doesn't affect new lines.
+	
+Adde Fetures:
+	- Window "Open With" now works with Notepad32
+	- Dark Thme
+
+If there reother bugs you've experienced, and they are not specified above, feel free to contact me. Every kind of help is good.
