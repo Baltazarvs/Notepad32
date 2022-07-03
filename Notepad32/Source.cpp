@@ -74,7 +74,6 @@ void PushRecentMenuItems(HWND w_Handle);
 void ClearRecentFilenames();
 std::vector<std::wstring> PullRecentFilenames();
 bool CheckRecentFilenameExistence(const wchar_t* filename);
-
 std::wstring LoadInfoFromFile(const wchar_t* path);
 
 // ======================= PROCEDURES ==================================
@@ -110,7 +109,7 @@ static HWND w_StatusBar = nullptr;
 
 LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-	HBRUSH hbr = nullptr;
+	static HBRUSH hbr = nullptr;
 	if(::Runtime_bDarkThemeEnabled)
 		hbr = CreateSolidBrush(RGB(0x55, 0x55, 0x55));
 	else
@@ -166,8 +165,8 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 		{
 			if (HIWORD(wParam) == EN_CHANGE)
 			{
-				int text_length = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
-				int text_lines = SendMessage(w_TextArea, EM_GETLINECOUNT, 0u, 0u);
+				int text_length = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+				int text_lines = SendMessageW(w_TextArea, EM_GETLINECOUNT, 0u, 0u);
 				UpdateStatusForLengthLine(text_length, text_lines);
 			}
 			switch (wParam)
@@ -177,8 +176,8 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 					UpdateStatusForLengthLine(0, 1);
 					::Runtime_CurrentPathOpened = false;
 					memset(::Runtime_CurrentPath, 0, sizeof(::Runtime_CurrentPath));
-					SendMessage(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(L""));
-					SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
+					SendMessageW(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(L""));
+					SendMessageW(w_StatusBar, SB_SETTEXTW, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
 					break;
 				}
 				case ID_FILE_OPEN:
@@ -300,7 +299,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			RECT wStatusRect = { };
 			int statusHeight = 0;
 			GetWindowRect(w_StatusBar, &wStatusRect);
-			SendMessageA(w_StatusBar, WM_SIZE, 0u, 0u);
+			SendMessageW(w_StatusBar, WM_SIZE, 0u, 0u);
 
 			statusHeight = wStatusRect.bottom - wStatusRect.top;
 			textAreaHeight = wTextAreaRect.bottom - statusHeight;
@@ -310,18 +309,12 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			sbWidths[0] = wRect.right / 3;
 			sbWidths[1] = wRect.right / 2;
 			sbWidths[2] = - 1;
-			SendMessage(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
+			SendMessageW(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
 			break;
 		}
 		case WM_CLOSE:
 		{
-			// In Progress...
-			//int len = GetWindowTextLengthW(w_TextArea);
-			//wchar_t* buffer = new wchar_t[len];
-			//GetWindowTextW(w_TextArea, buffer, len);
-			//bool bExit = CheckFileChanges(buffer);
-			//delete[] buffer;
-			//if (!bExit) break;
+			DeleteObject(hbr);
 			DestroyWindow(w_Handle);
 			break;
 		}
@@ -329,7 +322,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			PostQuitMessage(0);
 			break;
 		default:
-			return DefWindowProc(w_Handle, Msg, wParam, lParam);
+			return DefWindowProcW(w_Handle, Msg, wParam, lParam);
 	}
 	return 0;
 }
@@ -374,7 +367,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	int textAreaBkR = 255, textAreaBkG = 255, textAreaBkB = 255;
 	int textAreaTextBkR = 0, textAreaTextBkG = 0, textAreaTextBkB = 0;
 	bool bDarkTheme;
-	HBRUSH dlgbr = nullptr;
+	static HBRUSH dlgbr = nullptr;
 
 	if(::Runtime_bDarkThemeEnabled)
 		dlgbr = CreateSolidBrush(RGB(0x33, 0x33, 0x33));
@@ -393,7 +386,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			}
 			else
 				for (auto& a : recent_vec)
-					SendMessage(w_ListBoxRecentFiles, LB_ADDSTRING, 0u, (LPARAM)a.c_str());
+					SendMessageW(w_ListBoxRecentFiles, LB_ADDSTRING, 0u, (LPARAM)a.c_str());
 			
 			bUnderline = std::get<0>(currentSetsTuple);
 			bBold = std::get<1>(currentSetsTuple);
@@ -403,54 +396,54 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			bDarkTheme = std::get<11>(currentSetsTuple);
 
 			if (bUnderline)
-				SendMessageA(w_CheckUnderline, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
+				SendMessageW(w_CheckUnderline, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
 			else
-				SendMessageA(w_CheckUnderline, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+				SendMessageW(w_CheckUnderline, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
 
 			if (bBold)
-				SendMessageA(w_CheckBold, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
+				SendMessageW(w_CheckBold, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
 			else
-				SendMessageA(w_CheckBold, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+				SendMessageW(w_CheckBold, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
 
 			if (bItalic)
-				SendMessageA(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
+				SendMessageW(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
 			else
-				SendMessageA(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+				SendMessageW(w_CheckItalic, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
 
 			if (bDarkTheme)
-				SendMessageA(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
+				SendMessageW(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_CHECKED), 0u);
 			else
-				SendMessageA(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
+				SendMessageW(w_CheckDarkTheme, BM_SETCHECK, static_cast<WPARAM>(BST_UNCHECKED), 0u);
 
-			SendMessage(w_Font, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(std::get<3>(currentSetsTuple).c_str()));
+			SendMessageW(w_Font, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(std::get<3>(currentSetsTuple).c_str()));
 
 			std::wostringstream ss;
 			ss << std::get<4>(currentSetsTuple);
-			SendMessage(w_FontSize, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_FontSize, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<5>(currentSetsTuple);
-			SendMessage(w_TaBkColorR, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorR, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<6>(currentSetsTuple);
-			SendMessage(w_TaBkColorG, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorG, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<7>(currentSetsTuple);
-			SendMessage(w_TaBkColorB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<8>(currentSetsTuple);
-			SendMessage(w_TaBkColorTextR, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorTextR, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<9>(currentSetsTuple);
-			SendMessage(w_TaBkColorTextG, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorTextG, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			ss.str(L"");
 			ss << std::get<10>(currentSetsTuple);
-			SendMessage(w_TaBkColorTextB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
+			SendMessageW(w_TaBkColorTextB, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(ss.str().c_str()));
 
 			//EnableWindow(w_ButtonDeleteSelection, FALSE);
 			break;
@@ -491,17 +484,17 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 
 					if ((textAreaBkR > 255) || (textAreaBkR < 0))
 					{
-						MessageBoxA(w_Dlg, "[6] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[6] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkR = 255;
 					}
 					if ((textAreaBkG > 255) || (textAreaBkG < 0))
 					{
-						MessageBoxA(w_Dlg, "[7] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[7] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkG = 255;
 					}
 					if ((textAreaBkB > 255) || (textAreaBkB < 0))
 					{
-						MessageBoxA(w_Dlg, "[8] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[8] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkB = 255;
 					}
 
@@ -517,17 +510,17 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 
 					if ((textAreaTextBkR > 255) || (textAreaTextBkR < 0))
 					{
-						MessageBoxA(w_Dlg, "[9] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[9] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkR = 255;
 					}
 					if ((textAreaTextBkG > 255) || (textAreaTextBkG < 0))
 					{
-						MessageBoxA(w_Dlg, "[10] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[10] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkG = 0;
 					}
 					if ((textAreaTextBkB > 255) || (textAreaTextBkB < 0))
 					{
-						MessageBoxA(w_Dlg, "[11] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(w_Dlg, L"[11] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkB = 0;
 					}
 
@@ -550,7 +543,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					// Apply new settings.
 					if (!ApplyNotepad32Settings(currentSetsTuple))
 					{
-						MessageBoxA(w_Dlg, "Cannot apply settings!", "Error!", MB_OK | MB_ICONERROR);
+						MessageBoxW(w_Dlg, L"Cannot apply settings!", L"Error!", MB_OK | MB_ICONERROR);
 						return -1;
 					}
 					break;
@@ -571,10 +564,10 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					if (!bDefaultSettingsApplied)
 					{
 						// Ask if user really wants to apply default settings.
-						int confirm_rd = MessageBoxA(
+						int confirm_rd = MessageBoxW(
 							w_Dlg, 
-							"Default settings will be applied.\nProceed?", 
-							"Restore Defaults",  
+							L"Default settings will be applied.\nProceed?", 
+							L"Restore Defaults",  
 							MB_YESNO | MB_ICONQUESTION
 						);
 
@@ -595,7 +588,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 								SetWindowText(w_TaBkColorTextG, L"0");
 								SetWindowText(w_TaBkColorTextB, L"0");
 								Button_SetCheck(w_CheckDarkTheme, 0);
-								SendMessage(GetDlgItem(w_Dlg, ID_SETTINGS_BUTTON_APPLY), BM_CLICK, 0u, 0u);
+								SendMessageW(GetDlgItem(w_Dlg, ID_SETTINGS_BUTTON_APPLY), BM_CLICK, 0u, 0u);
 								break;
 							}
 							case IDNO:
@@ -630,7 +623,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 				}
 				case IDC_BUTTON_CLEAR_RECENT_HISTORY:
 				{
-					SendMessage(w_ListBoxRecentFiles, LB_RESETCONTENT, 0, 0);
+					SendMessageW(w_ListBoxRecentFiles, LB_RESETCONTENT, 0, 0);
 					::ClearRecentFilenames();
 					EnableWindow(w_ButtonClearRecent, FALSE);
 					EnableWindow(w_ButtonDeleteSelection, FALSE);
@@ -642,7 +635,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 					file.open(PATH_RECENT_FILES);
 					if (file.is_open())
 					{
-						int item_count = SendMessage(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
+						int item_count = SendMessageW(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
 						int selected_count = 0;
 
 						// If there is just one item left, disable this and clear buttons because it will be useless...
@@ -664,7 +657,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 								file.open(PATH_RECENT_FILES, std::wios::trunc);
 								if (file.is_open())
 								{
-									int count = SendMessage(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
+									int count = SendMessageW(w_ListBoxRecentFiles, LB_GETCOUNT, 0u, 0u);
 									static wchar_t buffer[MAX_PATH];
 									for (int i = 0; i < count; ++i)
 									{
@@ -747,14 +740,14 @@ LRESULT __stdcall DlgProc_DefaultFonts(HWND w_Dlg, UINT Msg, WPARAM wParam, LPAR
 				file.close();
 			}
 			else
-				MessageBoxA(GetParent(w_FontsComboBox), "Cannot load font list from file.\nDefault fonts will be loaded.", "Error", MB_OK | MB_ICONEXCLAMATION);
+				MessageBoxW(GetParent(w_FontsComboBox), L"Cannot load font list from file.\nDefault fonts will be loaded.", L"Error", MB_OK | MB_ICONEXCLAMATION);
 
 			if(fonts.size() < 1)
 				fonts = std::vector<std::wstring> { L"Arial", L"Tahoma", L"Times New Roman", L"Impact", L"System" };
 
 			for (std::size_t i = 0u; i < fonts.size(); ++i)
-				SendMessage(w_FontsComboBox, CB_ADDSTRING, 0u, reinterpret_cast<LPARAM>(fonts[i].c_str()));
-			SendMessage(w_FontsComboBox, CB_SETCURSEL, 0u, 0u);
+				SendMessageW(w_FontsComboBox, CB_ADDSTRING, 0u, reinterpret_cast<LPARAM>(fonts[i].c_str()));
+			SendMessageW(w_FontsComboBox, CB_SETCURSEL, 0u, 0u);
 			break;
 		}
 		case WM_COMMAND:
@@ -765,10 +758,10 @@ LRESULT __stdcall DlgProc_DefaultFonts(HWND w_Dlg, UINT Msg, WPARAM wParam, LPAR
 				{
 					::Runtime_DefaultSelectedFontFromDialog = new wchar_t[255];
 					std::size_t current_select_index = static_cast<std::size_t>(
-						SendMessage(w_FontsComboBox, CB_GETCURSEL, 0u, 0u)
+						SendMessageW(w_FontsComboBox, CB_GETCURSEL, 0u, 0u)
 					);
 
-					SendMessage(
+					SendMessageW(
 						w_FontsComboBox, 
 						CB_GETLBTEXT, 
 						static_cast<WPARAM>(current_select_index), 
@@ -895,16 +888,16 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 					std::wstring temp_buffer_ta;
 
 					// Get text from main text area.
-					int ta_text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+					int ta_text_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
 					if (ta_text_len < 1) return 1;
 					ta_text_len += 1;
 					wchar_t* tbuffer = new wchar_t[ta_text_len * sizeof(wchar_t)];
-					SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)ta_text_len, reinterpret_cast<LPARAM>(tbuffer));
+					SendMessageW(w_TextArea, WM_GETTEXT, (WPARAM)ta_text_len, reinterpret_cast<LPARAM>(tbuffer));
 					temp_buffer_ta = tbuffer;
 					delete[] tbuffer;
 
 					// Get text from edit box.
-					int text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
+					int text_len = SendMessageW(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
 					if (text_len < 1)
 					{
 						MessageBox(w_Dlg, L"Specify at least one character.", L"Find", MB_OK);
@@ -914,7 +907,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 
 					text_len += 1;
 					buffer = new wchar_t[text_len * sizeof(wchar_t)];
-					SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+					SendMessageW(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
 
 					// Find all occurrences and store indexes of all occurrences inside a vector.
 					std::size_t pos = temp_buffer_ta.find(buffer);
@@ -947,7 +940,7 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 						++sequence_index;
 						
 						// =========================== IN PROGRESS... =====================================
-						//int current_line = SendMessage(w_TextArea, EM_LINEFROMCHAR, (WPARAM)IndexVec[sequence_index], 0u);
+						//int current_line = SendMessageW(w_TextArea, EM_LINEFROMCHAR, (WPARAM)IndexVec[sequence_index], 0u);
 						//SetWindowText(w_EditFoundLine, ConvertToString<int>(current_line).c_str());
 						// ================================================================================
 					}
@@ -958,18 +951,18 @@ LRESULT __stdcall DlgProc_Find(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM lPara
 				case IDC_BUTTON_FIND_COUNT:
 				{
 					std::wstring ta_text;
-					int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+					int text_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
 					if (text_len < 1)
 						return 1;
 					text_len += 1;
 					buffer = new wchar_t[text_len * sizeof(wchar_t)];
-					SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+					SendMessageW(w_TextArea, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
 					ta_text = buffer;
 					delete[] buffer;
 
-					text_len = SendMessage(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
+					text_len = SendMessageW(w_EditFind, WM_GETTEXTLENGTH, 0u, 0u);
 					buffer = new wchar_t[text_len * sizeof(wchar_t)];
-					SendMessage(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
+					SendMessageW(w_EditFind, WM_GETTEXT, (WPARAM)text_len, reinterpret_cast<LPARAM>(buffer));
 					
 					std::wstringstream wss;
 					wss << "Found " << CountAllCases(ta_text, buffer, text_len) << " occurrences.";
@@ -1006,7 +999,7 @@ LRESULT __stdcall WndProc_StatusBarInfo(HWND w_Handle, UINT Msg, WPARAM wParam, 
 				int arr_pos[3] = { };
 				wchar_t sbpart_buff[255] = L"";
 
-				SendMessage(w_StatusBar, SB_GETPARTS, 3u, reinterpret_cast<LPARAM>(arr_pos));
+				SendMessageW(w_StatusBar, SB_GETPARTS, 3u, reinterpret_cast<LPARAM>(arr_pos));
 				if (cpos.x <= arr_pos[0])
 					SendMessageW(w_StatusBar, SB_GETTEXTW, 0u, reinterpret_cast<LPARAM>(sbpart_buff));
 				else if (cpos.x <= arr_pos[1])
@@ -1066,7 +1059,7 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 
 	if (!RegisterClassEx(&wcex))
 	{
-		MessageBoxA(nullptr, "Cannot register class!", "Error!", MB_OK | MB_ICONERROR);
+		MessageBoxW(nullptr, L"Cannot register class!", L"Error!", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 
@@ -1081,7 +1074,7 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 
 	if (w_Handle == nullptr)
 	{
-		MessageBoxA(nullptr, "Cannot create a window!", "Error!", MB_OK | MB_ICONERROR);
+		MessageBoxW(nullptr, L"Cannot create a window!", L"Error!", MB_OK | MB_ICONERROR);
 		return -1;
 	}
 
@@ -1089,7 +1082,7 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 	UpdateWindow(w_Handle);
 
 	MSG Msg = { };
-	while (GetMessage(&Msg, nullptr, 0, 0) > 0)
+	while (GetMessageW(&Msg, nullptr, 0, 0) > 0)
 	{
 		TranslateMessage(&Msg);
 		if (Msg.message == WM_KEYDOWN)
@@ -1111,14 +1104,14 @@ int __stdcall WinMain(HINSTANCE w_Inst, HINSTANCE w_PrevInst, char* lpCmdLine, i
 						UpdateStatusForLengthLine(0, 0);
 						::Runtime_CurrentPathOpened = false;
 						memset(::Runtime_CurrentPath, 0, sizeof(::Runtime_CurrentPath));
-						SendMessage(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(L""));
-						SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
+						SendMessageW(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(L""));
+						SendMessageW(w_StatusBar, SB_SETTEXTW, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
 					}
 					break;
 				}
 			}
 		}
-		DispatchMessage(&Msg);
+		DispatchMessageW(&Msg);
 	}
 	return 0;
 }
@@ -1128,23 +1121,23 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 	DWORD defStyle = (WS_VISIBLE | WS_CHILD);
 
 	w_TextArea = CreateWindowW(
-		WC_EDIT, nullptr,
+		WC_EDITW, nullptr,
 		defStyle | WS_HSCROLL | WS_VSCROLL | ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE,
 		0, 0, 300, 300,
 		w_Handle, reinterpret_cast<HMENU>(IDC_EDIT_TEXTAREA), w_Inst, nullptr
 	);
 
 	int sbWidths[] = { 150, 350, -1 };
-	w_StatusBar = CreateWindowEx(
-		0, STATUSCLASSNAME, nullptr,
+	w_StatusBar = CreateWindowExW(
+		0, STATUSCLASSNAMEW, nullptr,
 		defStyle | SBS_SIZEGRIP,
 		0, 0, 0, 0,
 		w_Handle, nullptr, w_Inst, nullptr
 	);
 
-	SendMessage(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
+	SendMessageW(w_StatusBar, SB_SETPARTS, 3u, reinterpret_cast<LPARAM>(sbWidths));
 	UpdateStatusForLengthLine(0, 0);
-	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
+	SendMessageW(w_StatusBar, SB_SETTEXTW, 2u, reinterpret_cast<LPARAM>(L"No file loaded."));
 
 	const std::size_t control_num = 1;
 	HWND w_Controls[control_num] = { w_TextArea };
@@ -1153,7 +1146,7 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 	{
 		if (w_Controls[i] == w_TextArea)
 		{
-			HFONT hFont = CreateFont(
+			HFONT hFont = CreateFontW(
 				std::get<4>(::CurrentSettingsTuple),
 				0, 0, 0, 0,
 				(DWORD)std::get<2>(::CurrentSettingsTuple),
@@ -1161,16 +1154,16 @@ void InitUI(HWND w_Handle, HINSTANCE w_Inst)
 				0, 0, 0, 0, 0, 0, (LPCWSTR)std::get<3>(::CurrentSettingsTuple).c_str()
 			);
 
-			SendMessage(w_Controls[i], WM_SETFONT, reinterpret_cast<WPARAM>(hFont), 1u);
+			SendMessageW(w_Controls[i], WM_SETFONT, reinterpret_cast<WPARAM>(hFont), 1u);
 			continue;
 		}
-		SendMessage(w_Controls[i], WM_SETFONT, reinterpret_cast<WPARAM>((HFONT)GetStockObject(DEFAULT_GUI_FONT)), 1u);
+		SendMessageW(w_Controls[i], WM_SETFONT, reinterpret_cast<WPARAM>((HFONT)GetStockObject(DEFAULT_GUI_FONT)), 1u);
 	}
 }
 
 std::wstring OpenFileWithDialog(const wchar_t* Filters, HWND w_Handle, int criteria)
 {
-	OPENFILENAME ofn = { };
+	OPENFILENAMEW ofn = { };
 	wchar_t* _Path = new wchar_t[MAX_PATH];
 
 	memset(&ofn, 0, sizeof(ofn));
@@ -1187,12 +1180,12 @@ std::wstring OpenFileWithDialog(const wchar_t* Filters, HWND w_Handle, int crite
 
 	if (criteria == 1)
 	{
-		if (!GetOpenFileName(&ofn))
+		if (!GetOpenFileNameW(&ofn))
 			return std::wstring(L"\0");
 	}
 	else
 	{
-		if (!GetSaveFileName(&ofn))
+		if (!GetSaveFileNameW(&ofn))
 			return std::wstring(L"\0");
 	}
 
@@ -1203,7 +1196,7 @@ std::wstring OpenFileWithDialog(const wchar_t* Filters, HWND w_Handle, int crite
 
 bool WriteReadFileToTextArea(const wchar_t* Path)
 {
-	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(Path));
+	SendMessageW(w_StatusBar, SB_SETTEXTW, 2u, reinterpret_cast<LPARAM>(Path));
 	wcscpy(Runtime_CurrentPath, Path);
 
 	if (Path != nullptr)
@@ -1239,9 +1232,9 @@ bool WriteReadFileToTextArea(const wchar_t* Path)
 				textBuffer += L"\r\n";
 			}
 
-			SendMessage(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(textBuffer.c_str()));
-			int text_length = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
-			int text_lines = SendMessage(w_TextArea, EM_GETLINECOUNT, 0u, 0u);
+			SendMessageW(w_TextArea, WM_SETTEXT, 0u, reinterpret_cast<LPARAM>(textBuffer.c_str()));
+			int text_length = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u);
+			int text_lines = SendMessageW(w_TextArea, EM_GETLINECOUNT, 0u, 0u);
 			UpdateStatusForLengthLine(text_length, text_lines);
 			file.close();
 		}
@@ -1256,7 +1249,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 	if (criteria == CRITERIA_FILE_SAVE)
 	{
 		// Get number of characters in Text Area.
-		int text_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 2;
+		int text_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 2;
 		// If text length is greater than 0, save file.
 		if (text_len > 0)
 		{
@@ -1269,7 +1262,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 					return 1;
 				if (!SaveTextToFile(path.c_str()))
 				{
-					MessageBoxA(w_Handle, "Cannot Save File!", "Error!", MB_OK | MB_ICONERROR);
+					MessageBoxW(w_Handle, L"Cannot Save File!", L"Error!", MB_OK | MB_ICONERROR);
 					return -1;
 				}
 				// Set boolean that tells us that we have one existing file that's been edited right now.
@@ -1282,17 +1275,17 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 				if (!SaveTextToFile(::Runtime_CurrentPath))
 				{
 					// If failure occures during saving process, return error code.
-					MessageBoxA(w_Handle, "Cannot Save File!", "Error!", MB_OK | MB_ICONERROR);
+					MessageBoxW(w_Handle, L"Cannot Save File!", L"Error!", MB_OK | MB_ICONERROR);
 					return -1;
 				}
 			}
 		}
 		else
-			MessageBoxA(GetParent(w_TextArea), "File\'s text length must be at least 1", "Notepad32", MB_OK | MB_ICONINFORMATION);
+			MessageBoxW(GetParent(w_TextArea), L"File\'s text length must be at least 1", L"Notepad32", MB_OK | MB_ICONINFORMATION);
 	}
 	else if (criteria == CRITERIA_FILE_SAVE_AS)
 	{
-		std::size_t text_len = static_cast<std::size_t>(SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u));
+		std::size_t text_len = static_cast<std::size_t>(SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u));
 		if (text_len > 0u)
 		{
 			std::wstring path(OpenFileWithDialog(L"Text File\0*.txt\0All Files\0*.*\0", w_Handle, CRITERIA_FILE_SAVE));
@@ -1300,7 +1293,7 @@ bool SaveTextProcedure(HWND w_Handle, int criteria)
 				return true;
 			if (!SaveTextToFile(path.c_str()))
 			{
-				MessageBoxA(w_Handle, "Cannot Save File!", "Error!", MB_OK | MB_ICONERROR);
+				MessageBoxW(w_Handle, L"Cannot Save File!", L"Error!", MB_OK | MB_ICONERROR);
 				return -1;
 			}
 			::Runtime_CurrentPathOpened = true;
@@ -1314,7 +1307,7 @@ bool SaveTextToFile(const wchar_t* path)
 	int text_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
 	wchar_t* buffer = nullptr;
 
-	SendMessage(w_StatusBar, SB_SETTEXT, 2u, reinterpret_cast<LPARAM>(path));
+	SendMessageW(w_StatusBar, SB_SETTEXTW, 2u, reinterpret_cast<LPARAM>(path));
 	wcscpy(::Runtime_CurrentPath, path);
 	
 	std::wofstream file(path);
@@ -1324,11 +1317,11 @@ bool SaveTextToFile(const wchar_t* path)
 		buffer = new wchar_t[text_len];
 		if (buffer == nullptr)
 		{
-			MessageBoxA(GetParent(w_TextArea), "Cannot allocate memory buffer for file!", "Fatal Error!", MB_OK | MB_ICONERROR);
+			MessageBoxW(GetParent(w_TextArea), L"Cannot allocate memory buffer for file!", L"Fatal Error!", MB_OK | MB_ICONERROR);
 			return false;
 		}
 
-		SendMessage(w_TextArea, WM_GETTEXT, static_cast<WPARAM>(text_len), reinterpret_cast<LPARAM>(buffer));
+		SendMessageW(w_TextArea, WM_GETTEXT, static_cast<WPARAM>(text_len), reinterpret_cast<LPARAM>(buffer));
 
 		// ============= ADDED to prevent line separating after save. ==============
 		std::wstring tempp(buffer);
@@ -1425,7 +1418,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_R >> textAreaBkR;
 					if ((textAreaBkR > 255) || (textAreaBkR < 0))
 					{
-						MessageBoxA(0, "[6] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[6] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkR = 255;
 					}
 					break;
@@ -1438,7 +1431,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_G >> textAreaBkG;
 					if ((textAreaBkG > 255) || (textAreaBkG < 0))
 					{
-						MessageBoxA(0, "[7] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[7] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkG = 255;
 					}
 					break;
@@ -1451,7 +1444,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_B >> textAreaBkB;
 					if ((textAreaBkB > 255) || (textAreaBkB < 0))
 					{
-						MessageBoxA(0, "[8] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[8] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaBkB = 255;
 					}
 					break;
@@ -1464,7 +1457,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_tR >> textAreaTextBkR;
 					if ((textAreaTextBkR > 255) || (textAreaTextBkR < 0))
 					{
-						MessageBoxA(0, "[8] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[8] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkR = 0;
 					}
 					break;
@@ -1477,7 +1470,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_tG >> textAreaTextBkG;
 					if ((textAreaTextBkG > 255) || (textAreaTextBkG < 0))
 					{
-						MessageBoxA(0, "[9] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[9] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkG = 0;
 					}
 					break;
@@ -1490,7 +1483,7 @@ SETTINGS_TUPLE LoadNotepad32Settings()
 					woss_tB >> textAreaTextBkB;
 					if ((textAreaTextBkB > 255) || (textAreaTextBkB < 0))
 					{
-						MessageBoxA(0, "[10] Color value must be:\n0 > value <= 255.", "Error", MB_OK | MB_ICONINFORMATION);
+						MessageBoxW(0, L"[10] Color value must be:\n0 > value <= 255.", L"Error", MB_OK | MB_ICONINFORMATION);
 						textAreaTextBkB = 0;
 					}
 					break;
@@ -1545,8 +1538,8 @@ void UpdateStatusForLengthLine(int length, int lines)
 	std::wostringstream len_ss, line_ss;
 	len_ss << "Length: " << length;
 	line_ss << "Lines: " << lines;
-	SendMessage(w_StatusBar, SB_SETTEXT, 0u, reinterpret_cast<LPARAM>(len_ss.str().c_str()));
-	SendMessage(w_StatusBar, SB_SETTEXT, 1u, reinterpret_cast<LPARAM>(line_ss.str().c_str()));
+	SendMessageW(w_StatusBar, SB_SETTEXTW, 0u, reinterpret_cast<LPARAM>(len_ss.str().c_str()));
+	SendMessageW(w_StatusBar, SB_SETTEXTW, 1u, reinterpret_cast<LPARAM>(line_ss.str().c_str()));
 }
 
 int KeydownCombo(int key)
@@ -1560,14 +1553,14 @@ void CopyTextToClipboard()
 	{
 		unsigned long begin_sel;
 		unsigned long end_sel;
-		SendMessage(w_TextArea, EM_GETSEL, (WPARAM)&begin_sel, (LPARAM)&end_sel);
+		SendMessageW(w_TextArea, EM_GETSEL, (WPARAM)&begin_sel, (LPARAM)&end_sel);
 
-		int sel_len = SendMessage(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
+		int sel_len = SendMessageW(w_TextArea, WM_GETTEXTLENGTH, 0u, 0u) + 1;
 		if (sel_len < 1)
 			return;
 
 		wchar_t* buff = new wchar_t[sel_len];
-		SendMessage(w_TextArea, WM_GETTEXT, (WPARAM)sel_len, reinterpret_cast<LPARAM>(buff));
+		SendMessageW(w_TextArea, WM_GETTEXT, (WPARAM)sel_len, reinterpret_cast<LPARAM>(buff));
 		
 		// TODO: This next line is likely to throw exceptions commonly.
 		// It will be fixed in future versions.
@@ -1643,7 +1636,7 @@ void RemoveSelectedText(HWND w_Handle, bool bPaste, std::wstring clipboard_text)
 {
 	unsigned long begin_sel;
 	unsigned long end_sel;
-	SendMessage(w_Handle, EM_GETSEL, reinterpret_cast<WPARAM>(&begin_sel), reinterpret_cast<LPARAM>(&end_sel));
+	SendMessageW(w_Handle, EM_GETSEL, reinterpret_cast<WPARAM>(&begin_sel), reinterpret_cast<LPARAM>(&end_sel));
 
 	std::size_t sel_len = (std::size_t)(end_sel - begin_sel);
 
@@ -1666,9 +1659,9 @@ void RemoveSelectedText(HWND w_Handle, bool bPaste, std::wstring clipboard_text)
 	SetWindowTextW(w_Handle, temp_buff.c_str());
 	
 	if(bPaste)
-		SendMessage(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size() + clipboard_text.size(), (LPARAM)primary_part_before.size() + clipboard_text.size());
+		SendMessageW(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size() + clipboard_text.size(), (LPARAM)primary_part_before.size() + clipboard_text.size());
 	else
-		SendMessage(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
+		SendMessageW(w_Handle, EM_SETSEL, (WPARAM)primary_part_before.size(), (LPARAM)primary_part_before.size());
 	delete[] buff;
 	return;
 }
@@ -1686,7 +1679,7 @@ bool CheckFileChanges(const wchar_t* ta_text)
 		file.close();
 		if (woss.str() != temp_opened)
 		{
-			int confirm = MessageBoxA(GetParent(w_TextArea), "File is not saved.\nSave?", "Unsaved File", MB_YESNO | MB_ICONQUESTION);
+			int confirm = MessageBoxW(GetParent(w_TextArea), L"File is not saved.\nSave?", L"Unsaved File", MB_YESNO | MB_ICONQUESTION);
 			if (confirm == IDYES)
 			{
 				SaveTextToFile(::Runtime_CurrentPath);
@@ -1769,7 +1762,7 @@ void PushRecentFilename(const wchar_t* filename)
 		file.close();
 	}
 	else
-		MessageBoxA(GetParent(w_TextArea), "Cannot push recent file.", "File Open Error", MB_OK | MB_ICONERROR);
+		MessageBoxW(GetParent(w_TextArea), L"Cannot push recent file.", L"File Open Error", MB_OK | MB_ICONERROR);
 	return;
 }
 
