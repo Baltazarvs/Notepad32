@@ -281,8 +281,8 @@ IDI_WICON               ICON                    "Source\\Media\\Icons\\notepad32
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,0,0,1
- PRODUCTVERSION 1,0,0,1
+ FILEVERSION 1,1,0,0
+ PRODUCTVERSION 1,1,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -299,12 +299,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Baltazarus"
             VALUE "FileDescription", "Notepad32 is simple program for editing and IO text."
-            VALUE "FileVersion", "1.0.0.1"
+            VALUE "FileVersion", "1.1"
             VALUE "InternalName", "Notepad32.exe"
             VALUE "LegalCopyright", "Copyright (C) 2021 - 2022 Baltazarus"
             VALUE "OriginalFilename", "Notepad32.exe"
             VALUE "ProductName", "Notepad32 Editor"
-            VALUE "ProductVersion", "1.0.0.1"
+            VALUE "ProductVersion", "1.1"
         END
     END
     BLOCK "VarFileInfo"
@@ -321,7 +321,7 @@ END
 
 STRINGTABLE
 BEGIN
-    IDS_STRING_PATCH        "- This is very first version of this program, so there are bugs as always.\r\n\r\nRequired fixes:\r\n\t - Cut, copy and paste\r\n\t - Spacing between lines during file saving\r\n\t - Recent bug, but also with ""Save As""\r\n\r\nFixed bugs:\r\n\t- Settings applying system\r\n\r\nAdded Features:\r\n\t- Windows ""Open With"" now works with Notepad32\r\n\t- Dark Theme\r\n\r\nIf there are other bugs you've experienced, and they are not specified above, feel free to contact me. Every kind of help is good."
+    IDS_STRING_PATCH        "VERSION 1.0 ---------------------------\r\n- This is very first version of this program, so there are bugs as always.\r\n\r\nRequired fixes:\r\n\t - Cut, copy and paste\r\n\t - Spacing between lines during file saving\r\n\t - Recent bug, but also with ""Save As""\r\n\r\nFixed bugs:\r\n\t- Settings applying system\r\n\r\nAdded Features:\r\n\t- Windows ""Open With"" now works with Notepad32\r\n\t- Dark Theme\r\n\r\nUPDATE v1.1 - 7/5/2022.------------------------\r\nFixed GDI Leaks and continuing on development of the Find system.\r\nRequired Fixes:\r\n\t-Find occurence count\r\n\t-Adding other features to find system.\r\n\r\nIf there are other bugs you've experienced, and they are not specified above, feel free to contact me. Every kind of help is good."
     IDS_STRING_HOWTOUSE     "There is no special theory behind Notepad32 but some features are invisible like shortcuts for saving, saving as and opening files.\r\n\r\nShortcut keys:\r\n\t\tCtrl + S - Save file\r\n\t\tCtrl + N - New file\r\n\r\nThere are no keys for Opening and Saving As files, but I will add them in next version of Notepad32.\r\nAnother thing is Settings dialog. Go to Edit > Settings inside menu and there is a bunch of controls that are, well, settings. As you can see, there is a lot of space for new settings that will be added in future like window background color, show and hide some controls like menu bar, status bar, etc. and other settings that  are coming in future.\r\n\r\nFor info about Notepad32 and pending bug fixing info aka. Patch Notes are available inside Help > ... menu.\r\n\r\nOther is unneeded to explain because it looks so easy to use this program.\r\nEver used Notepad?"
     IDS_STRING_ABOUT        "Notepad32 is a software for editing textual files and it's equivalent to Microsoft's notepad."
     IDS_STRING_ABOUTBY      "Created 2021-2022 by Baltazarus"
