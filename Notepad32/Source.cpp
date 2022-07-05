@@ -110,10 +110,13 @@ static HWND w_StatusBar = nullptr;
 LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	static HBRUSH hbr = nullptr;
-	if(::Runtime_bDarkThemeEnabled)
-		hbr = CreateSolidBrush(RGB(0x55, 0x55, 0x55));
-	else
-		hbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	if (!hbr)
+	{
+		if (::Runtime_bDarkThemeEnabled)
+			hbr = CreateSolidBrush(RGB(0x55, 0x55, 0x55));
+		else
+			hbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	}
 
 	switch (Msg)
 	{
@@ -305,7 +308,7 @@ LRESULT __stdcall WndProc(HWND w_Handle, UINT Msg, WPARAM wParam, LPARAM lParam)
 			textAreaHeight = wTextAreaRect.bottom - statusHeight;
 			MoveWindow(w_TextArea, 0, 0, wRect.right, wRect.bottom - statusHeight, TRUE);
 			MoveWindow(w_StatusBar, 0, 0, wRect.right, 0, TRUE);
-
+			
 			sbWidths[0] = wRect.right / 3;
 			sbWidths[1] = wRect.right / 2;
 			sbWidths[2] = - 1;
@@ -369,10 +372,13 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 	bool bDarkTheme;
 	static HBRUSH dlgbr = nullptr;
 
-	if(::Runtime_bDarkThemeEnabled)
-		dlgbr = CreateSolidBrush(RGB(0x33, 0x33, 0x33));
-	else
-		dlgbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	if (!dlgbr)
+	{
+		if (::Runtime_bDarkThemeEnabled)
+			dlgbr = CreateSolidBrush(RGB(0x33, 0x33, 0x33));
+		else
+			dlgbr = CreateSolidBrush(GetSysColor(COLOR_WINDOW));
+	}
 
 	switch (Msg)
 	{
@@ -453,9 +459,13 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 			switch (wParam)
 			{
 				case IDCANCEL:
+					DeleteObject(dlgbr);
+					dlgbr = nullptr;
 					EndDialog(w_Dlg, IDCANCEL);
 					break;
 				case IDOK:
+					DeleteObject(dlgbr);
+					dlgbr = nullptr;
 					EndDialog(w_Dlg, IDOK);
 				case ID_SETTINGS_BUTTON_APPLY:
 				{
@@ -713,6 +723,7 @@ LRESULT __stdcall DlgProc_Settings(HWND w_Dlg, UINT Msg, WPARAM wParam, LPARAM l
 		case WM_CLOSE:
 		{
 			DeleteObject(dlgbr);
+			dlgbr = nullptr;
 			EndDialog(w_Dlg, 0);
 			break;
 		}
